@@ -1,0 +1,19 @@
+@font-face {
+    font-family: "Roboto-Bold";
+    src: url("deps/Roboto-Bold.ttf");
+}
+
+#bpm {
+    font-size: 72px; 
+    transition: 300ms ease-in-out; 
+    color: #f04848;
+    text-shadow: 0 0 0.5rem #f04848; 
+    font-family: "Roboto-Bold";
+    text-align: center; 
+    width: 300px;
+    float: right;
+}
+
+#bpm::after {
+    content: " BPM";
+}
