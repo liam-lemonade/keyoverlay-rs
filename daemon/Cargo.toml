@@ -1,0 +1,12 @@
+[package]
+name = "keyoverlay_daemon"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+simple-websockets = "0.1.4"
+device_query = "1.1.1"
+config = "0.13.1"
+array_tool = "1.0.3"
