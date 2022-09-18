@@ -4,5 +4,12 @@
 }
 
 .odometer {
-    font-size: calc(2rem + 5vw);
+    font-size: 48pt;
+    color: black;
+}
+
+.rectangle {
+    height: 50px;
+    width: 100px;
+    background-color: rgba(252, 37, 37, 0.201);
 }
