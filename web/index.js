@@ -1,13 +1,12 @@
 class Settings {
-    static port = 7685;
-    static odometerAnimation = true;
-    static odometerAnimationSpeedMs = 100;
+    static port = 7685; // check the settings.json file for this
+    static odometerAnimation = true; // should there be a keypress counter
+    static odometerAnimationSpeedMs = 100; // how fast should the animation for the counter play. set to 0 to disable animation
 }
 
 let socket = new ReconnectingWebSocket('ws://127.0.0.1:' + Settings.port + '/ws');
 
 socket.onopen = () => {
-    odometer.innerHTML = 0;
     console.log("Successfully Connected");
 };
 
@@ -21,7 +20,6 @@ socket.onerror = error => {
 
 socket.onmessage = event => {
     handleKeyPress(event.data);
-    //console.log(event.data);
 }
 
 class Key {
@@ -29,6 +27,7 @@ class Key {
     counter = 0;
 }
 
+// the list of keys that have been pressed so far
 let keysList = [];
 
 function handleKeyPress(data) {
@@ -83,3 +82,5 @@ function handleKeyPress(data) {
 
 // Main
 document.querySelector(':root').style.setProperty("--duration", Settings.odometerAnimationSpeedMs + "ms");
+
+// https://www.w3schools.com/css/tryit.asp?filename=trycss3_gradient-linear_trans
