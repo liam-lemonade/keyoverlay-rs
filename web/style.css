@@ -17,6 +17,7 @@
     font-size: var(--text-size);
     color: var(--text-color);
 
+    display: flex;
     position: inherit;
     top: 90%;
 

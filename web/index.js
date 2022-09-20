@@ -71,27 +71,24 @@ function handleKeyPress(data) {
                 let added = new Key();
                 added.text = jsonKey;
                 
+                addNewKeyHTML(added);
                 keysList.push(added);
                 pressedKeys.push(added);
-                addNewKeyHTML(added);
             }
             else {
                 // key exists in list
                 pressedKeys.push(found);
             }
         });
-
-        // increase pressed key counter by 1
-        pressedKeys.forEach(key => {
-            key.counter++;
-        });
-
-        // update animation
+        
         if (Settings.odometerAnimation) {
-            let parent = document.getElementById("keys");
-            parent.children.forEach(child => {
-                child.odometer.innerHTML++;
-            })
+            // increase pressed key counter by 1
+            pressedKeys.forEach(key => {
+                key.counter++;
+                key.html.querySelector(".odometer").innerHTML = key.counter;
+            });
+
+            //odometer.innerHTML = pressedKeys[0].counter;
         }
     }
 }
@@ -100,14 +97,22 @@ function addNewKeyHTML(keypress) {
     if (!(keypress instanceof Key))
         throw "Attempted to call `addNewKeyHTML` where `keypress` was not instanceof `Key`";
 
-    element = document.createElement("div");
+    let element = document.createElement("div");
     element.id = "keybox-" + keypress.text;
     element.className = "keybox";
-
-    element.innerHTML = "<div class=\"odometer\" id=\"odometer\">0</div>\n<div id=\"keybox-text\"></div>";
+    element.innerHTML = "<div id=\"keybox-text\"></div>";
+    
     document.getElementById("keys").appendChild(element);
-
     keypress.html = element;
+
+    let odometer = document.createElement("div");
+    odometer.id = "odometer";
+    element.appendChild(odometer);
+    
+    new Odometer({
+        el: odometer,
+        value: 0,
+    });
 }
 
 // main
