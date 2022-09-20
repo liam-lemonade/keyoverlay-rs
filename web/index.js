@@ -124,14 +124,15 @@ function onKeyDown(key) {
     }
 
     // set background-alpha
-
+    key.div.style = "--background-alpha: 1;";
 }
 
 function onKeyUp(key) {
     if (!(key instanceof Key))
         throw "Attempted to call `onKeyUp` where `key` was not instanceof `Key`";
 
-    
+    // un-set background alpha
+    key.div.style = "--background-alpha: 0;";
 }
 
 function addNewKeyHTML(keypress) {
