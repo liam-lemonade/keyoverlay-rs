@@ -31,7 +31,9 @@ class KeyHistory {
 class Key {
     text = "";
     counter = 0;
+
     div = null;
+    keytext = null;
     odometer = null;
 
     history = [];
@@ -124,7 +126,7 @@ function onKeyDown(key) {
     }
 
     // set background-alpha
-    key.div.style = "background-color: var(--background); transition: background-color var(--fade-speed) linear;"
+    key.div.style = "background-color: var(--fill-color); transition: background-color var(--fill-animation-speed) linear;"
 }
 
 function onKeyUp(key) {
@@ -133,20 +135,22 @@ function onKeyUp(key) {
     }
 
     // un-set background alpha
-    key.div.style = "background-color: transparent; transition: background-color var(--fade-speed) linear;"
+    key.div.style = "background-color: transparent; transition: background-color var(--fill-animation-speed) linear;"
 }
 
 function addNewKeyHTML(keypress) {
-    if (!(keypress instanceof Key))
+    if (!(keypress instanceof Key)) {
         throw "Attempted to call `addNewKeyHTML` where `keypress` was not instanceof `Key`";
+    }
 
+    // create parent div
     keypress.div = document.createElement("div");
     keypress.div.id = "keybox-" + keypress.text;
     keypress.div.className = "keybox";
-    keypress.div.innerHTML = "<div id=\"keybox-text\"></div>";
     
     document.getElementById("keys").appendChild(keypress.div);
 
+    // create odometer
     keypress.odometer = document.createElement("div");
     keypress.odometer.id = "odometer";
     keypress.div.appendChild(keypress.odometer);
@@ -155,6 +159,12 @@ function addNewKeyHTML(keypress) {
         el: keypress.odometer,
         value: 0,
     });
+
+    // fill text in `keybox-text`
+    keypress.keytext = document.createElement("div");
+    keypress.keytext.id = "keybox-text";
+    keypress.keytext.innerHTML = keypress.text;
+    keypress.div.appendChild(keypress.keytext);
 }
 
 // main
