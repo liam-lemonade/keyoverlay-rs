@@ -124,15 +124,16 @@ function onKeyDown(key) {
     }
 
     // set background-alpha
-    key.div.style = "--background-alpha: 1;";
+    key.div.style = "background-color: var(--background); transition: background-color var(--fade-speed) linear;"
 }
 
 function onKeyUp(key) {
-    if (!(key instanceof Key))
+    if (!(key instanceof Key)) {
         throw "Attempted to call `onKeyUp` where `key` was not instanceof `Key`";
+    }
 
     // un-set background alpha
-    key.div.style = "--background-alpha: 0;";
+    key.div.style = "background-color: transparent; transition: background-color var(--fade-speed) linear;"
 }
 
 function addNewKeyHTML(keypress) {
