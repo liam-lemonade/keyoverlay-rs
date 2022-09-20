@@ -23,6 +23,11 @@
     white-space: nowrap;
 }
 
+@keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
 #keybox-text {
     font-family: "Roboto-Bold";
 
@@ -30,7 +35,7 @@
     color: var(--text-color);
 }
 
-#keybox {
+.keybox {
     margin-left: 15px;
 
     --color: #000;
@@ -48,6 +53,8 @@
     display: inline-flex;
     justify-content: center;
     align-items: center;
+
+    animation: fadeIn 200ms;
 }
 
 .keys {

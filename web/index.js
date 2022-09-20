@@ -70,10 +70,10 @@ function handleKeyPress(data) {
             if (found == null) {
                 let added = new Key();
                 added.text = jsonKey;
-                added.html = addNewKeyHTML(added);
                 
                 keysList.push(added);
                 pressedKeys.push(added);
+                addNewKeyHTML(added);
             }
             else {
                 // key exists in list
@@ -96,9 +96,14 @@ function handleKeyPress(data) {
     }
 }
 
-function addNewKeyHTML() {
+function addNewKeyHTML(keypress) {
+    if (!(keypress instanceof Key))
+        throw "Attempted to call `addNewKeyHTML` where `keypress` was not instanceof `Key`";
+
     element = document.createElement("div");
-    element.id = "keybox";
+    element.id = "keybox-" + keypress.text;
+    element.className = "keybox";
+
     element.innerHTML = "<div class=\"odometer\" id=\"odometer\">0</div>\n<div id=\"keybox-text\"></div>";
     document.getElementById("keys").appendChild(element);
 }
