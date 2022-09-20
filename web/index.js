@@ -106,6 +106,8 @@ function addNewKeyHTML(keypress) {
 
     element.innerHTML = "<div class=\"odometer\" id=\"odometer\">0</div>\n<div id=\"keybox-text\"></div>";
     document.getElementById("keys").appendChild(element);
+
+    keypress.html = element;
 }
 
 // main
