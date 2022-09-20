@@ -11,7 +11,7 @@
 :root {
     --keybox-color: #FFF;
     --text-color: #FFF;
-    --fill-color: rgb(170, 170, 170);
+    --fill-color: rgba(170, 170, 170, 0.7);
 
     --keybox-size: 100px;
     --text-size: 36pt;

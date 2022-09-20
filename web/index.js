@@ -150,14 +150,16 @@ function addNewKeyHTML(keypress) {
     document.getElementById("keys").appendChild(keypress.div);
 
     // create odometer
-    keypress.odometer = document.createElement("div");
-    keypress.odometer.id = "odometer";
-    keypress.div.appendChild(keypress.odometer);
-    
-    keypress.odometer = new Odometer({
-        el: keypress.odometer,
-        value: 0,
-    });
+    if (Settings.odometerAnimation) {
+        keypress.odometer = document.createElement("div");
+        keypress.odometer.id = "odometer";
+        keypress.div.appendChild(keypress.odometer);
+        
+        keypress.odometer = new Odometer({
+            el: keypress.odometer,
+            value: 0,
+        });
+    }
 
     // fill text in `keybox-text`
     keypress.keytext = document.createElement("div");
