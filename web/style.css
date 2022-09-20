@@ -14,34 +14,12 @@
 
     font-size: 48pt;
     color: black;
-
-    position: absolute;
-    padding-left: 14px;
-    top: 140%;
-    left: 50%;
-    margin: -24pt 0 0 -24pt;
 }
 
 #keybox-text {
-    font-family: "Roboto-Bold";
-
-    font-size: 48pt;
-    color: black;
-
-    position: absolute;
-    padding-left: 10px;
     
-    top: 50%;
-    left: 50%;
-    margin: -24pt 0 0 -24pt;
 }
 
 #keybox {
-    height: 100px;
-    width: 100px;
-
-    border-radius: 25px;
-    border: 8px solid #000000FF;
-
-    position: absolute;
+    
 }
