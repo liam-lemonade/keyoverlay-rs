@@ -39,58 +39,99 @@ class Key {
 
 // the list of keys that have been pressed so far
 let keysList = [];
-let keyHistory = [];
 
+let lastPressed = [];
 function handleKeyPress(data) {
-    if (typeof data !== 'string')
+    if (typeof data !== 'string') {
         throw "Attempted to call `handleKeyPress` where `data` was not typeof string";
+    }
 
-    if (data != "[]") {
-        let pressedKeys = [];
-        
-        // Parse JSON that looks like [ "X", "Z" ]
-        let parsed = JSON.parse(data);
+    let pressed = JSON.parse(data);
 
-        // For each key currently pressed
-        parsed.forEach(jsonKey => {
-            let found = null;
-            
-            keysList.every(storedKey => {
-                // if this key (keyString) has been pressed before
-                // don't use .includes because of `counter` variable
-                if (storedKey.text === jsonKey) {
-                    found = storedKey;
+    let newKeysPressed = [];
+    let keysReleased = [];
 
-                    return false; // .every breaks on return false
-                }
-
-                return true; // .every will also break if `true` is not returned at some point
-            });
-
-            // key is being pressed for the first time
-            if (found == null) {
-                let added = new Key();
-                added.text = jsonKey;
-                
-                addNewKeyHTML(added);
-                keysList.push(added);
-                pressedKeys.push(added);
-            }
-            else {
-                // key exists in list
-                pressedKeys.push(found);
+    // populate newKeysPressed and keysReleased
+    {
+        pressed.forEach(press => {
+            if (!lastPressed.includes(press)) {
+                newKeysPressed.push(press);
             }
         });
-        
-        if (Settings.odometerAnimation) {
-            // increase pressed key counter by 1
-            pressedKeys.forEach(key => {
-                key.odometer.update(++key.counter);
-            });
 
-            //odometer.innerHTML = pressedKeys[0].counter;
-        }
+        lastPressed.forEach(press => {
+            if (!pressed.includes(press)) {
+                keysReleased.push(press);
+            }
+        });
     }
+
+    // call respective handlers
+    {
+        newKeysPressed.forEach(key => {
+            onKeyDown(findKey(key));
+        });
+
+        keysReleased.forEach(key => {
+            onKeyUp(findKey(key));
+        });
+    }
+
+    lastPressed = pressed;
+}
+
+function findKey(text) {
+    if (typeof text !== 'string') {
+        throw "Attempted to call `findKey` where `text` was not typeof string"
+    }
+
+    // has this key been pressed before?
+    let found = null;
+    keysList.every(key => {
+        
+        if (key.text === text) {
+            found = key;
+            return false; // array.every breaks on false
+        }
+
+        return true; // array.every must have a return false statement
+    });
+
+    if (found === null) {
+        // key has never been pressed before
+        let added = new Key();
+        added.text = text;
+        
+        addNewKeyHTML(added);
+        keysList.push(added);
+
+        return added;
+    }
+    else {
+        // key has been pressed before
+        return found;
+    }
+}
+
+function onKeyDown(key) {
+    if (!(key instanceof Key)) {
+        throw "Attempted to call `onKeyDown` where `key` was not instanceof `Key`";
+    }
+
+    // update odometer
+    if (Settings.odometerAnimation) {
+        key.odometer.update(++key.counter);
+    }
+
+    // set background-alpha
+
+}
+
+function onKeyUp(key) {
+    if (!(key instanceof Key))
+        throw "Attempted to call `onKeyUp` where `key` was not instanceof `Key`";
+
+    
 }
 
 function addNewKeyHTML(keypress) {
