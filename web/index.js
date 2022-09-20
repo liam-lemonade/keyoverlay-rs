@@ -31,6 +31,7 @@ class KeyHistory {
 class Key {
     text = "";
     counter = 0;
+    html = null;
 
     history = [];
 }
@@ -69,11 +70,10 @@ function handleKeyPress(data) {
             if (found == null) {
                 let added = new Key();
                 added.text = jsonKey;
+                added.html = addNewKeyHTML(added);
                 
                 keysList.push(added);
                 pressedKeys.push(added);
-
-                addNewKeyHTML(added);
             }
             else {
                 // key exists in list
@@ -83,22 +83,24 @@ function handleKeyPress(data) {
 
         // increase pressed key counter by 1
         pressedKeys.forEach(key => {
-            key.counter++
+            key.counter++;
         });
 
         // update animation
         if (Settings.odometerAnimation) {
-            // TODO: implement something that adds new odometers for every key in `keysList`
-            odometer.innerHTML = pressedKeys[0].counter;
+            let parent = document.getElementById("keys");
+            parent.children.forEach(child => {
+                child.odometer.innerHTML++;
+            })
         }
     }
 }
 
-function addNewKeyHTML(keypress) {
-    if (!(keypress instanceof Key))
-        throw "Attempted to call `addNewKeyHTML` where `keypress` was not instanceof `Key`";
-
-    
+function addNewKeyHTML() {
+    element = document.createElement("div");
+    element.id = "keybox";
+    element.innerHTML = "<div class=\"odometer\" id=\"odometer\">0</div>\n<div id=\"keybox-text\"></div>";
+    document.getElementById("keys").appendChild(element);
 }
 
 // main
