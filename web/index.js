@@ -2,7 +2,6 @@ class Settings {
     static port = 7685; // check the settings.json file for this
     static odometerAnimation = true; // should there be a keypress counter
     static odometerAnimationSpeed = "100ms"; // how fast should the animation for the counter play. set to 0 to disable animation
-    static overrideKeyDisplay = [];
 }
 
 let socket = new ReconnectingWebSocket('ws://127.0.0.1:' + Settings.port + '/ws');
@@ -163,7 +162,7 @@ function addNewKeyHTML(keypress) {
     // fill text in `keybox-text`
     keypress.keytext = document.createElement("div");
     keypress.keytext.id = "keybox-text";
-    keypress.keytext.innerHTML = keypress.text;
+    keypress.keytext.innerHTML = keypress.text; // add override
     keypress.div.appendChild(keypress.keytext);
 }
 
