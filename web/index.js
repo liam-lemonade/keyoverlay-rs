@@ -96,7 +96,7 @@ function handleKeyPress(data) {
 
 function addNewKeyHTML(keypress) {
     if (!(keypress instanceof Key))
-        throw "Attempted to call `handleKeyPress` where `data` was not instanceof `String`";
+        throw "Attempted to call `addNewKeyHTML` where `keypress` was not instanceof `Key`";
 
     
 }
