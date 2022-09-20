@@ -40,10 +40,13 @@ let keysList = [];
 let keyHistory = [];
 
 function handleKeyPress(data) {
-    if (data !== "[]") {
+    if (typeof data !== 'string')
+        throw "Attempted to call `handleKeyPress` where `data` was not typeof string";
+
+    if (data != "[]") {
         let pressedKeys = [];
         
-        // Parse JSON that looks like ["X", "Z"]
+        // Parse JSON that looks like [ "X", "Z" ]
         let parsed = JSON.parse(data);
 
         // For each key currently pressed
@@ -63,12 +66,14 @@ function handleKeyPress(data) {
             });
 
             // key is being pressed for the first time
-            if (found === null) {
+            if (found == null) {
                 let added = new Key();
                 added.text = jsonKey;
                 
                 keysList.push(added);
                 pressedKeys.push(added);
+
+                addNewKeyHTML(added);
             }
             else {
                 // key exists in list
@@ -89,12 +94,15 @@ function handleKeyPress(data) {
     }
 }
 
+function addNewKeyHTML(keypress) {
+    if (!(keypress instanceof Key))
+        throw "Attempted to call `handleKeyPress` where `data` was not instanceof `String`";
+
+    
+}
+
 // main
 document.querySelector(':root').style.setProperty("--duration", Settings.odometerAnimationSpeed);
-
-
-
-
 
 
 
