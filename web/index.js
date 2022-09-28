@@ -47,6 +47,13 @@ function handleKeyPress(data) {
         throw "Attempted to call `handleKeyPress` where `data` was not typeof string";
     }
 
+    if (data == "reset") {
+        keysList.forEach(key => {
+            key.counter = 0;
+            key.odometer.update(key.counter);
+        })
+    }
+
     let pressed = JSON.parse(data);
 
     let newKeysPressed = [];

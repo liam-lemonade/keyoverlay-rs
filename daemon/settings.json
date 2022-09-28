@@ -1,4 +1,5 @@
 {
     "port": 7685,
-    "keys": [ "Z", "X" ]
+    "keys": [ "Z", "X" ],
+    "reset": "End"
 }

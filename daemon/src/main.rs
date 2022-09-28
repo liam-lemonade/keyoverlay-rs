@@ -1,5 +1,5 @@
 use device_query::{DeviceQuery, DeviceState, Keycode};
-use simple_websockets::{Event, Responder};
+use simple_websockets::{Event, Responder, Message};
 use config::Config;
 
 use std::io::Write;
@@ -15,7 +15,8 @@ use array_tool::vec::Intersect;
 static DEFAULT_CONFIG: &[u8] = 
 b"{
     \"port\": 7685,
-    \"keys\": [ \"Z\", \"X\" ]
+    \"keys\": [ \"Z\", \"X\" ],
+    \"reset\": \"End\"
 }";
 
 fn create_default_config(name: &str) {
@@ -88,13 +89,19 @@ fn main() {
              strings.push(key.to_string()) 
         }
 
+        let do_reset = strings.contains(&settings.get::<String>("reset").unwrap());
         let intersect = strings.intersect(settings.get::<Vec<String>>("keys").unwrap());
 
-        if intersect != last_pressed {
+        if intersect != last_pressed || do_reset {
 
             let clients = key_clone.lock().unwrap();
             for (_, client) in clients.clone() {
-                client.send(simple_websockets::Message::Text(format!("{:?}", intersect)));
+                if do_reset {
+                    client.send(Message::Text("reset".to_string()));
+                }
+                else {
+                    client.send(Message::Text(format!("{:?}", intersect)));
+                }
             }
 
             last_pressed = intersect;
