@@ -4,7 +4,7 @@ class Settings {
     static odometerAnimationSpeed = "100ms"; // how fast should the animation for the counter play. set to 0 to disable animation
 
     //static keytextOverride = null;
-    static keytextOverride = new Map().set("I", "Z").set("I", "X");
+    static keytextOverride = new Map().set("I", "Z").set("P", "X");
 }
 
 let socket = new ReconnectingWebSocket('ws://127.0.0.1:' + Settings.port);
