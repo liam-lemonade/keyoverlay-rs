@@ -25,6 +25,9 @@
     --fill-color: rgba(170, 170, 170, 0.7);
     --fill-animation-speed: 100ms;
 
+    --history-color: rgba(170, 170, 170, 0.7);
+    --history-time-on-screen: 500ms;
+
     background-color: black; /* TODO: MAKE SURE TO REMOVE THE BACKGROUND COLOR */
 
     padding: 0;
@@ -70,6 +73,12 @@
     background-color: transparent;
 }
 
-.keys {
+.history {
+    height: 100px;
+    
+    background-color: var(--history-color);
+}
+
+#keys {
     display: inline;
 }

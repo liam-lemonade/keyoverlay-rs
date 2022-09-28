@@ -2,6 +2,9 @@ class Settings {
     static port = 7685; // check the settings.json file for this
     static odometerAnimation = true; // should there be a keypress counter
     static odometerAnimationSpeed = "100ms"; // how fast should the animation for the counter play. set to 0 to disable animation
+
+    //static keytextOverride = null;
+    static keytextOverride = new Map().set("I", "Z").set("P", "X");
 }
 
 let socket = new ReconnectingWebSocket('ws://127.0.0.1:' + Settings.port);
@@ -20,11 +23,6 @@ socket.onerror = error => {
 
 socket.onmessage = event => {
     handleKeyPress(event.data);
-}
-
-class KeyHistory {
-    start = 0;
-    end = 0;
 }
 
 class Key {
@@ -170,13 +168,20 @@ function addNewKeyHTML(keypress) {
     // fill text in `keybox-text`
     keypress.keytext = document.createElement("div");
     keypress.keytext.className = "keybox-text";
-    keypress.keytext.innerHTML = keypress.text; // add override
+        
+    let override = Settings.keytextOverride.get(keypress.text)
+    keypress.keytext.innerHTML = override;
+
     keypress.div.appendChild(keypress.keytext);
+}
+
+function addKeyHistoryHTML(key) {
+    if (!(key instanceof Key)) {
+        throw "Attempted to call `addKeyHistoryHTML` where `key` was not instanceof `Key`";
+    }
 }
 
 // main
 document.querySelector(':root').style.setProperty("--duration", Settings.odometerAnimationSpeed);
-
-
 
 // https://www.w3schools.com/css/tryit.asp?filename=trycss3_gradient-linear_trans
