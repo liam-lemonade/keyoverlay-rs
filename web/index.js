@@ -50,6 +50,8 @@ function handleKeyPress(data) {
             key.counter = 0;
             key.odometer.update(key.counter);
         })
+
+        return;
     }
 
     let pressed = JSON.parse(data);
