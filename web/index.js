@@ -4,7 +4,7 @@ class Settings {
     static odometerAnimationSpeed = "100ms"; // how fast should the animation for the counter play. set to 0 to disable animation
 
     //static keytextOverride = null;
-    static keytextOverride = new Map().set("I", "Z").set("P", "X");
+    static keytextOverride = new Map().set("I", "Z").set("I", "X");
 }
 
 let socket = new ReconnectingWebSocket('ws://127.0.0.1:' + Settings.port);
@@ -168,9 +168,16 @@ function addNewKeyHTML(keypress) {
     // fill text in `keybox-text`
     keypress.keytext = document.createElement("div");
     keypress.keytext.className = "keybox-text";
+    
+    let content = keypress.text;
+    if (Settings.keytextOverride !== null) {
+        let override = Settings.keytextOverride.get(keypress.text)
         
-    let override = Settings.keytextOverride.get(keypress.text)
-    keypress.keytext.innerHTML = override;
+        if (override != undefined) {
+            content = override;
+        }
+    }
+    keypress.keytext.innerHTML = content;
 
     keypress.div.appendChild(keypress.keytext);
 }
