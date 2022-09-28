@@ -194,20 +194,18 @@ function handleKeyHistory(keypress, down) {
     }
 
     if (down) {
-        let history = new KeyHistory();
-
         // add new history div with class #history
-        history.div = document.createElement("div");
-        history.div.className = "history";
-        history.div.style = "--length: 0px;"
+        let element = document.createElement("div");
+        element.className = "history";
+        element.style = "--length: 0px;"
 
-        keypress.div.appendChild(history.div);
-        keypress.history.push(history);
+        keypress.div.appendChild(element);
+        keypress.history.push(element);
     }
     else {
         let history = keypress.history[keypress.history.length - 1];
-        let length = history.div.style.getPropertyValue("--length");
-        history.div.style = "--length: " + length + "; animation: moveUp var(--history-time) linear forwards;";
+        let length = history.style.getPropertyValue("--length");
+        history.style = "--length: " + length + "; animation: moveUp var(--history-time) linear forwards;";
     }
 }
 
