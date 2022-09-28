@@ -68,8 +68,17 @@
     background-color: transparent;
 }
 
+#keys {
+    display: inline;
+}
+
+@keyframes moveUp {
+    0% { margin-top: 0%; }
+    100% { margin-top: -200%;}
+}
+
 .history {
-    --length: 8px;
+    --length: 0px; /* due to CSS limitations, the size will be handled by JS. moving up can be done in css though */
     --offset: calc(var(--keybox-size) + calc(var(--keybox-thickness) * 2));
     
     height: var(--length);
@@ -80,8 +89,4 @@
     background-color: var(--history-color);
 
     position: absolute;
-}
-
-#keys {
-    display: inline;
 }

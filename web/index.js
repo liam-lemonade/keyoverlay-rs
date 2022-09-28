@@ -194,23 +194,25 @@ function handleKeyHistory(keypress, down) {
     }
 
     if (down) {
-        // add new history div with class #history
-        let element = document.createElement("div");
-        element.className = "history";
+        let history = new KeyHistory();
 
-        keypress.div.appendChild(element);
-        keypress.history.push(element);
+        // add new history div with class #history
+        history.div = document.createElement("div");
+        history.div.className = "history";
+        history.div.style = "--length: 0px;"
+
+        keypress.div.appendChild(history.div);
+        keypress.history.push(history);
     }
     else {
-        // remove newest history, impossible to fail logically
-        let index = keypress.history.length - 1;
-
-        keypress.history[index].remove();
-        keypress.history.splice(index, 1);
+        let history = keypress.history[keypress.history.length - 1];
+        let length = history.div.style.getPropertyValue("--length");
+        history.div.style = "--length: " + length + "; animation: moveUp var(--history-time) linear forwards;";
     }
 }
 
 // main
 document.querySelector(':root').style.setProperty("--duration", Settings.odometerAnimationSpeed);
+
 
 // https://www.w3schools.com/css/tryit.asp?filename=trycss3_gradient-linear_trans
