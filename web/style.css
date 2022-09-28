@@ -20,8 +20,8 @@
     --fill-color: rgba(170, 170, 170, 0.7);
     --fill-animation-speed: 100ms;
 
-    --history-color: rgba(170, 170, 170, 0.7);
-    --history-time-on-screen: 500ms;
+    --history-color: rgba(255, 0, 0, 1);
+    --history-time: 500ms; /* the amount of time the ending segment will stay on screen after the key is released */
 
     background-color: black; /* TODO: MAKE SURE TO REMOVE THE BACKGROUND COLOR */
 
@@ -69,9 +69,17 @@
 }
 
 .history {
-    height: 100px;
+    --length: 8px;
+    --offset: calc(var(--keybox-size) + calc(var(--keybox-thickness) * 2));
     
+    height: var(--length);
+
+    width: var(--offset);
+    margin-bottom: calc(var(--offset) + var(--length));
+
     background-color: var(--history-color);
+
+    position: absolute;
 }
 
 #keys {

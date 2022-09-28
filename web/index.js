@@ -131,6 +131,8 @@ function onKeyDown(key) {
         key.odometer.update(++key.counter);
     }
 
+    handleKeyHistory(key, true);
+
     // set background-alpha
     key.div.style = "background-color: var(--fill-color); transition: background-color var(--fill-animation-speed) linear;"
 }
@@ -139,6 +141,8 @@ function onKeyUp(key) {
     if (!(key instanceof Key)) {
         throw "Attempted to call `onKeyUp` where `key` was not instanceof `Key`";
     }
+
+    handleKeyHistory(key, false);
 
     // un-set background alpha
     key.div.style = "background-color: transparent; transition: background-color var(--fill-animation-speed) linear;"
@@ -184,9 +188,25 @@ function addNewKeyHTML(keypress) {
     keypress.div.appendChild(keypress.keytext);
 }
 
-function addKeyHistoryHTML(key) {
-    if (!(key instanceof Key)) {
-        throw "Attempted to call `addKeyHistoryHTML` where `key` was not instanceof `Key`";
+function handleKeyHistory(keypress, down) {
+    if (!(keypress instanceof Key)) {
+        throw "Attempted to call `handleKeyHistory` where `keypress` was not instanceof `Key`";
+    }
+
+    if (down) {
+        // add new history div with class #history
+        let element = document.createElement("div");
+        element.className = "history";
+
+        keypress.div.appendChild(element);
+        keypress.history.push(element);
+    }
+    else {
+        // remove newest history, impossible to fail logically
+        let index = keypress.history.length - 1;
+
+        keypress.history[index].remove();
+        keypress.history.splice(index, 1);
     }
 }
 
