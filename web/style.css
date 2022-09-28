@@ -10,18 +10,20 @@
 
 :root {
     --keybox-color: #FFF;
-    --text-color: #FFF;
-    --fill-color: rgba(170, 170, 170, 0.7);
-
     --keybox-size: 100px;
-    --text-size: 36pt;
-
     --keybox-thickness: 4px;
     --keybox-rounding: calc(var(--keybox-size) / 4);
 
-    --fill-animation-speed: 100ms;
-
+    --text-color: #FFF;
+    --text-size: 36pt;
     --text-font: "Tahoma";
+
+    --counter-color: #FFF;
+    --counter-size: 30pt;
+    --counter-font: "Tahoma";
+
+    --fill-color: rgba(170, 170, 170, 0.7);
+    --fill-animation-speed: 100ms;
 
     background-color: black; /* TODO: MAKE SURE TO REMOVE THE BACKGROUND COLOR */
 
@@ -29,11 +31,11 @@
     margin: 0;
 }
 
-#odometer {
-    font-family: var(--text-font);
+.counter {
+    font-family: var(--counter-font);
 
-    font-size: var(--text-size);
-    color: var(--text-color);
+    font-size: var(--counter-size);
+    color: var(--counter-color);
 
     display: flex;
     position: relative;
@@ -42,7 +44,7 @@
     white-space: nowrap;
 }
 
-#keybox-text {
+.keybox-text {
     font-family: var(--text-font);
 
     font-size: var(--text-size);

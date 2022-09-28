@@ -152,7 +152,7 @@ function addNewKeyHTML(keypress) {
     // create odometer
     if (Settings.odometerAnimation) {
         keypress.odometer = document.createElement("div");
-        keypress.odometer.id = "odometer";
+        keypress.odometer.className = "counter";
         keypress.div.appendChild(keypress.odometer);
         
         keypress.odometer = new Odometer({
@@ -163,7 +163,7 @@ function addNewKeyHTML(keypress) {
 
     // fill text in `keybox-text`
     keypress.keytext = document.createElement("div");
-    keypress.keytext.id = "keybox-text";
+    keypress.keytext.className = "keybox-text";
     keypress.keytext.innerHTML = keypress.text; // add override
     keypress.div.appendChild(keypress.keytext);
 }
