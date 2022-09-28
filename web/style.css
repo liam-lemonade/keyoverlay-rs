@@ -3,11 +3,6 @@
     src: url("deps/Roboto-Bold.ttf");
 }
 
-@keyframes fadeIn {
-    0% { opacity: 0; }
-    100% { opacity: 1; }
-}
-
 :root {
     --keybox-color: #FFF;
     --keybox-size: 100px;
