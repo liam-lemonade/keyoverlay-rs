@@ -10,3 +10,9 @@ simple-websockets = "0.1.4"
 device_query = "1.1.1"
 config = "0.13.1"
 array_tool = "1.0.3"
+msgbox = "0.7.0"
+serde = "1.0.145"
+tray-item = "0.7.1"
+
+[build-dependencies]
+windres = "*"

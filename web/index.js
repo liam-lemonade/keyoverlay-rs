@@ -151,7 +151,6 @@ function addNewKeyHTML(keypress) {
 
     // create parent div
     keypress.div = document.createElement("div");
-    keypress.div.id = "keybox-" + keypress.text;
     keypress.div.className = "keybox";
     
     document.getElementById("keys").appendChild(keypress.div);
