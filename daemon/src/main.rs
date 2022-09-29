@@ -1,28 +1,38 @@
-#![windows_subsystem = "windows"] // don't create console window
+//#![windows_subsystem = "windows"] // don't create console window
+
+extern crate actix_web;
+extern crate actix_files;
+extern crate actix_web_actors;
+extern crate open;
 
 extern crate device_query;
-extern crate simple_websockets;
-extern crate std;
+
 extern crate config;
-extern crate msgbox;
 extern crate array_tool;
 extern crate serde;
+
+extern crate msgbox;
 extern crate tray_item;
 
-use device_query::{DeviceQuery, DeviceState, Keycode};
+extern crate std;
 
-use simple_websockets::{Event, Responder, Message};
+use actix_web::{ get, App, HttpResponse, HttpServer, Responder, HttpRequest };
+use actix_web_actors::ws;
+use actix_files as fs;
+
+use device_query::{ DeviceQuery, DeviceState, Keycode };
 
 use config::Config;
 
 use tray_item::TrayItem;
 
-use std::io::Write;
-use std::sync::{mpsc, Arc, Mutex};
-use std::collections::HashMap;
+use std::io::{ Write, Read };
+use std::sync::{ mpsc, Arc, Mutex };
+use std::vec;
 use std::thread;
 use std::path::Path;
 use std::fs::File;
+use std::process::ExitCode;
 
 use array_tool::vec::Intersect;
 
@@ -42,6 +52,8 @@ If you find any issues, report them on the issues tab on the GitHub.";
 static MSGBOX_CONFIG_ERROR: &str =
 "An error has been encountered! Attempted to read {:?} from configuration file (could be corrupt?).\n
 Deleting the file (settings.json) and relaunching the program may fix this issue";
+
+static WEBFILE_PATH: &str = r"D:\code\projects\keyoverlay\web";
 
 fn create_default_config(name: &str) {
     msgbox::create("KeyOverlay Daemon", MSGBOX_NEW_TEXT, msgbox::IconType::Info).unwrap();
@@ -86,95 +98,88 @@ fn try_read_config<'de, T: serde::Deserialize<'de>>(config: &Config, key: &str) 
     return value;
 }
 
-fn main() {
-    // variables
-    let settings = try_get_config("settings.json"); 
+#[get("/{dir}")]
+async fn index(request: HttpRequest) -> impl Responder {
+    let dir: String = request.match_info().query("dir").parse().unwrap();
+    let path = format!("{}\\{}\\index.html", WEBFILE_PATH, dir);
 
-    // mutex to pass between threads
-    let client_list = Arc::new(Mutex::new(HashMap::new()));
+    let result = fs::NamedFile::open(path);
 
-    let port = try_read_config::<u16>(&settings, "port");
+    match result {
+        Ok(mut file) => {
+            let mut html: String = String::new();
+            _ = file.read_to_string(&mut html);
 
-    // mutex for the web thread
-    let web_clone = Arc::clone(&client_list);
-    thread::spawn(move || {
-        let socket = simple_websockets::launch(port)
-            .expect(format!("Failed to create websocket on port {:?}", port).as_str());
-
-        // ulong id : responder struct
-        let mut clients: HashMap<u64, Responder> = HashMap::new();
-
-        loop {
-            // socket.poll_event is a blocking function, so we made a new thread for it.
-            // when something happens, it will exit the match statement, update `list` and then resume waiting
-            match socket.poll_event() {
-                Event::Connect(client_id, responder) => {
-                    println!("Client #{} connected.", client_id);
-                    clients.insert(client_id, responder);
-                }
-
-                Event::Disconnect(client_id) => {
-                    println!("Client #{} disconnected.", client_id);
-                    clients.remove(&client_id);
-                }
-
-                _ => (),
-            }
-
-            let mut list = web_clone.lock().unwrap();
-            *list = clients.clone();
+            return HttpResponse::Ok().content_type("text/html; charset=utf-8").body(html);
         }
-    });
 
-    // mutex for the keyboard thread
-    let key_clone = Arc::clone(&client_list);
-    thread::spawn(move || {
-        let device_state = DeviceState::new();
-        let mut last_pressed: Vec<String> = Vec::new();
-        loop {
-            let pressed: Vec<Keycode> = device_state.get_keys();
-
-            let mut strings: Vec<String> = Vec::new();
-            for key in pressed.iter() {
-                strings.push(key.to_string()) 
-            }
-
-            let do_reset = strings.contains(&try_read_config::<String>(&settings, "reset"));
-            let intersect = strings.intersect(try_read_config::<Vec<String>>(&settings, "keys"));
-
-            if intersect != last_pressed || do_reset {
-                let clients = key_clone.lock().unwrap();
-                for (_, client) in clients.clone() {
-                    if do_reset { // index.js handles the resetting
-                        client.send(Message::Text(String::from("reset")));
-                    }
-                    else {
-                        client.send(Message::Text(format!("{:?}", intersect)));
-                    }
-                }
-
-                last_pressed = intersect;
-            }
+        Err(error) => {
+            return HttpResponse::Ok().body(error.to_string());
         }
-    });
+    } 
+}
 
+fn create_tray_item() {
     let result = TrayItem::new("KeyOverlay Daemon", "keyoverlay-icon");
 
     let mut tray = match result {
         Ok(instance) => instance,
-        Err(error) => panic!("{:?}", error)
+        Err(_) => {
+            msgbox_error("Failed to create tray item!");
+            std::process::exit(1);
+        }
     };
 
     let (tx, rx) = mpsc::channel();
-
-    tray.add_menu_item("Quit", move || {
-        tx.send(String::new()).unwrap();
+    
+    enum TrayMessage {
+        OpenSite,
+        Die
+    }
+    
+    let open_tx = tx.clone();
+    tray.add_menu_item("Open Overlay", move || {
+        open_tx.send(TrayMessage::OpenSite).unwrap();
     }).unwrap();
 
+    let quit_tx = tx.clone();
+    tray.add_menu_item("Quit", move || {
+        quit_tx.send(TrayMessage::Die).unwrap();
+    }).unwrap();
+
+    let settings = try_get_config("settings.json");
+    let address = format!("http://127.0.0.1:{:?}", try_read_config::<u16>(&settings, "port"));
     loop {
-        match rx.recv() {
-            Ok(_) => break,
-            _ => {}
+        let event = rx.recv().unwrap();
+        match event {
+            TrayMessage::OpenSite => open::that(String::from(address.clone())).unwrap(),
+            TrayMessage::Die => std::process::exit(0)
         }
-    }
+    };
+}
+
+fn run_app() {
+    thread::spawn(|| {
+        create_tray_item();
+    });
+
+    thread::spawn(|| {
+        // capture key
+    })
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    run_app();
+
+    let address = ("127.0.0.1", try_read_config::<u16>(&try_get_config("settings.json"), "port"));
+
+    HttpServer::new(|| {
+        App::new()
+            .service(index)
+            .service(fs::Files::new("/", WEBFILE_PATH).show_files_listing())
+        })
+    .bind(address)?
+    .run()
+    .await
 }
