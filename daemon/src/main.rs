@@ -165,7 +165,7 @@ fn run_app() {
 
     thread::spawn(|| {
         // capture key
-    })
+    });
 }
 
 #[actix_web::main]
