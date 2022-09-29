@@ -212,5 +212,12 @@ function handleKeyHistory(keypress, down) {
 // main
 document.querySelector(':root').style.setProperty("--duration", Settings.odometerAnimationSpeed);
 
+setInterval(function() {
+    keysList.forEach(key => {
+        key.history.forEach(history => {
+
+        });
+    });
+}, 0);
 
 // https://www.w3schools.com/css/tryit.asp?filename=trycss3_gradient-linear_trans
