@@ -5,6 +5,7 @@ class Settings {
 
     //static keytextOverride = null;
     static keytextOverride = new Map().set("I", "Z").set("P", "X");
+    static historyPixelsPerSecond = 1000;
 }
 
 let socket = new ReconnectingWebSocket('ws://127.0.0.1:' + Settings.port);
@@ -23,6 +24,14 @@ socket.onerror = error => {
 
 socket.onmessage = event => {
     handleKeyPress(event.data);
+}
+
+class KeyHistory {
+    div = null;
+    pressed = false;
+
+    start = 0;
+    end = 0;
 }
 
 class Key {
@@ -192,32 +201,57 @@ function handleKeyHistory(keypress, down) {
     if (!(keypress instanceof Key)) {
         throw "Attempted to call `handleKeyHistory` where `keypress` was not instanceof `Key`";
     }
-
+    
     if (down) {
-        // add new history div with class #history
-        let element = document.createElement("div");
-        element.className = "history";
-        element.style = "--length: 0px;"
+        let history = new KeyHistory();
 
-        keypress.div.appendChild(element);
-        keypress.history.push(element);
+        // add new history div with class #history
+        history.div = document.createElement("div");
+        history.div.className = "history";
+        history.div.style = "--length: 0px;"
+        history.pressed = true;
+
+        keypress.div.appendChild(history.div);
+        keypress.history.push(history);
     }
     else {
         let history = keypress.history[keypress.history.length - 1];
-        let length = history.style.getPropertyValue("--length");
+        history.pressed = false;
+    }
+    /*
+    else {
+        let history = keypress.history[keypress.history.length - 1];
+        let length = history.div.style.getPropertyValue("--length");
         history.style = "--length: " + length + "; animation: moveUp var(--history-time) linear forwards;";
     }
+    */
 }
 
 // main
 document.querySelector(':root').style.setProperty("--duration", Settings.odometerAnimationSpeed);
 
+let lastUpdate = Date.now();
 setInterval(function() {
+    let current = Date.now();
+    let delta = (current - lastUpdate) / 1000;
+
     keysList.forEach(key => {
         key.history.forEach(history => {
+            history.start += Settings.historyPixelsPerSecond * delta;
 
+            if (history.pressed) {
+                history.end = 0;
+            }
+            else {
+                history.end += Settings.historyPixelsPerSecond * delta;
+            }
+
+            let height = history.start - history.end;
+            history.div.style = "--length: " + height + "px; transform: translateY(-" + history.end + "px);";
         });
     });
+
+    lastUpdate = current;
 }, 0);
 
 // https://www.w3schools.com/css/tryit.asp?filename=trycss3_gradient-linear_trans

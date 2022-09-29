@@ -20,8 +20,9 @@
     --fill-color: rgba(170, 170, 170, 0.7);
     --fill-animation-speed: 100ms;
 
-    --history-color: rgba(255, 0, 0, 1);
+    --history-color: rgba(170, 170, 170, 0.7);
     --history-time: 500ms; /* the amount of time the ending segment will stay on screen after the key is released */
+    --history-rounding: 10px;
 
     background-color: black; /* TODO: MAKE SURE TO REMOVE THE BACKGROUND COLOR */
 
@@ -53,7 +54,8 @@
 
 .keybox {
     margin-left: 15px;
-
+    margin-top: 40%;
+    
     height: var(--keybox-size);
     width: var(--keybox-size);
 
@@ -72,21 +74,18 @@
     display: inline;
 }
 
-@keyframes moveUp {
-    0% { margin-top: 0%; }
-    100% { margin-top: -200%;}
-}
-
 .history {
-    --length: 0px; /* due to CSS limitations, the size will be handled by JS. moving up can be done in css though */
+    --length: 0px;
     --offset: calc(var(--keybox-size) + calc(var(--keybox-thickness) * 2));
     
     height: var(--length);
-
     width: var(--offset);
+
     margin-bottom: calc(var(--offset) + var(--length));
 
     background-color: var(--history-color);
 
+    border-radius: var(--history-rounding);
+    
     position: absolute;
 }
