@@ -5,6 +5,8 @@ class Settings {
 
     //static keytextOverride = null;
     static keytextOverride = new Map().set("I", "Z").set("P", "X");
+
+    static showHistory = true;
     static historyPixelsPerSecond = 1000;
 }
 
@@ -198,6 +200,10 @@ function addNewKeyHTML(keypress) {
 }
 
 function handleKeyHistory(keypress, down) {
+    if (!Settings.showHistory) {
+        return;
+    }
+    
     if (!(keypress instanceof Key)) {
         throw "Attempted to call `handleKeyHistory` where `keypress` was not instanceof `Key`";
     }
