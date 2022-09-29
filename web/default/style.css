@@ -21,7 +21,6 @@
     --fill-animation-speed: 100ms;
 
     --history-color: rgba(170, 170, 170, 0.7);
-    --history-time: 500ms; /* the amount of time the ending segment will stay on screen after the key is released */
     --history-rounding: 10px;
 
     background-color: black; /* TODO: MAKE SURE TO REMOVE THE BACKGROUND COLOR */
