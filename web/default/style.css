@@ -22,9 +22,7 @@
 
     --history-color: rgba(170, 170, 170, 0.7);
     --history-rounding: 10px;
-
-    background-color: black; /* TODO: MAKE SURE TO REMOVE THE BACKGROUND COLOR */
-
+    
     padding: 0;
     margin: 0;
 }
