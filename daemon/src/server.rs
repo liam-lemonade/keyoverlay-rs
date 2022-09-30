@@ -18,37 +18,22 @@ pub async fn update_clients(pressed: Vec<String>) {
     // iterate through all websocket clients and send pressed to them
 }
 
-#[get("/{dir}")]
-async fn index(request: HttpRequest) -> impl Responder {
-    let dir: String = request.match_info().query("dir").parse().unwrap();
-    let path = format!("{}\\{}\\index.html", WEBFILE_PATH, dir);
-
-    let result = fs::NamedFile::open(path);
-
-    match result {
-        Ok(mut file) => {
-            let mut html: String = String::new();
-            _ = file.read_to_string(&mut html);
-
-            return HttpResponse::Ok().content_type("text/html; charset=utf-8").body(html);
-        }
-
-        Err(error) => {
-            return HttpResponse::Ok().body(error.to_string());
-        }
-    } 
-}
-
 #[actix_web::main]
 pub async fn spawn_server(settings: Settings) ->  std::io::Result<()> {
     let address = ("127.0.0.1", settings.read_config::<u16>("port")); // the address is a tuple
 
-    HttpServer::new(|| {
+    let server = HttpServer::new(|| {
         App::new()
-            .service(index)
-            .service(fs::Files::new("/", WEBFILE_PATH).show_files_listing())
+            .service(fs::Files::new("/", WEBFILE_PATH)
+                .show_files_listing()
+                .index_file("index.html")
+            )
         })
     .bind(address)?
-    .run()
-    .await
+    .run();
+    
+    let (ip, port) = address;
+    open::that(format!("http://{}:{}", ip, port)).unwrap();
+
+    server.await
 }

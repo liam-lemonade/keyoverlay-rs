@@ -10,7 +10,7 @@ class Settings {
     static historyPixelsPerSecond = 1000;
 }
 
-let socket = new ReconnectingWebSocket('ws://127.0.0.1:' + Settings.port);
+let socket = new ReconnectingWebSocket("ws://127.0.0.1:" + Settings.port + "/ws");
 
 socket.onopen = () => {
     console.log("Successfully Connected");
