@@ -1,12 +1,12 @@
 //#![windows_subsystem = "windows"] // don't create console window
 
-extern crate tray_item;
-extern crate device_query;
 extern crate array_tool;
+extern crate device_query;
+extern crate tray_item;
 
-pub mod settings;
 pub mod error;
 pub mod server;
+pub mod settings;
 
 use settings::Settings;
 
@@ -14,7 +14,7 @@ use tray_item::TrayItem;
 
 use array_tool::vec::Intersect;
 
-use device_query::{ Keycode, DeviceState, DeviceQuery };
+use device_query::{DeviceQuery, DeviceState, Keycode};
 
 use std::sync::mpsc;
 use std::thread;
@@ -33,19 +33,23 @@ fn spawn_tray(settings: Settings) {
     };
 
     let (tx, rx) = mpsc::channel();
-    
+
     enum TrayMessage {
         OpenSite,
-        Die
+        Die,
     }
-    
+
     let open_tx = tx.clone();
     tray.add_menu_item("Open Overlay", move || {
         open_tx.send(TrayMessage::OpenSite).unwrap_or_else(|error| {
-            error::handle_error("Failed to send Open Overlay interaction across mpsc!", error);
+            error::handle_error(
+                "Failed to send Open Overlay interaction across mpsc!",
+                error,
+            );
             error::shutdown(1);
         });
-    }).unwrap_or_else(|error| {
+    })
+    .unwrap_or_else(|error| {
         error::handle_error("Failed to add menu element to tray item!", error);
         error::shutdown(1);
     });
@@ -56,7 +60,8 @@ fn spawn_tray(settings: Settings) {
             error::handle_error("Failed to send Quit interaction across mpsc!", error);
             error::shutdown(1);
         });
-    }).unwrap_or_else(|error| {
+    })
+    .unwrap_or_else(|error| {
         error::handle_error("Failed to add menu element to tray item!", error);
         error::shutdown(1);
     });
@@ -66,21 +71,25 @@ fn spawn_tray(settings: Settings) {
         let event = match rx.recv() {
             Ok(data) => data,
 
-            Err(_) => continue // hopefully they press it again
+            Err(_) => continue, // hopefully they press it again
         };
 
         match event {
-            TrayMessage::OpenSite => open::that(String::from(address.clone())).unwrap(),
+            TrayMessage::OpenSite => match open::that(String::from(address.clone())) {
+                Ok(_) => {}
 
-            TrayMessage::Die => error::shutdown(0)
+                Err(error) => error::handle_error("Failed to open overlay in browser!", error),
+            },
+
+            TrayMessage::Die => error::shutdown(0),
         }
-    };
+    }
 }
 
 fn hook_keyboard(settings: Settings) {
     let keys = settings.read_config::<Vec<String>>("keys");
     let reset = settings.read_config::<String>("reset");
-    
+
     let device = DeviceState::new();
     let mut last_pressed: Vec<String> = Vec::new();
     loop {
@@ -97,11 +106,8 @@ fn hook_keyboard(settings: Settings) {
         if pressed != last_pressed || do_reset {
             if do_reset {
                 // send the message "reset" over to every websocket client
-                
-            }
-            else {
+            } else {
                 // send the list "pressed" to every websocket client
-                
             }
         }
 
@@ -111,17 +117,21 @@ fn hook_keyboard(settings: Settings) {
 
 fn main() {
     let settings = Settings::new("settings.json");
-    
+
     let tray_settings = settings.clone();
-    thread::spawn(move || { spawn_tray(tray_settings); });
+    thread::spawn(move || {
+        spawn_tray(tray_settings);
+    });
 
     let keyboard_settings = settings.clone();
-    thread::spawn(move || { hook_keyboard(keyboard_settings); });
+    thread::spawn(move || {
+        hook_keyboard(keyboard_settings);
+    });
 
     let server_settings = settings.clone();
     match server::spawn_server(server_settings) {
-        Ok(_) => { },
-        
+        Ok(_) => {}
+
         Err(error) => {
             error::handle_error("HttpServer did not exit gracefully.", error);
             error::shutdown(1);

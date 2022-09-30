@@ -1,5 +1,5 @@
-extern crate serde;
 extern crate msgbox;
+extern crate serde;
 
 use std::fmt::Debug;
 
@@ -8,11 +8,8 @@ pub fn shutdown(code: i32) -> ! {
 }
 
 pub fn messagebox(text: &str) {
-    msgbox::create(
-        "KeyOverlay Daemon",
-        text,
-        msgbox::IconType::Info
-    ).expect("Failed to create messagebox!");
+    msgbox::create("KeyOverlay Daemon", text, msgbox::IconType::Info)
+        .expect("Failed to create messagebox!");
 }
 
 pub fn handle_error<T: Debug>(text: &str, error: T) {
@@ -21,6 +18,7 @@ pub fn handle_error<T: Debug>(text: &str, error: T) {
     msgbox::create(
         "KeyOverlay Daemon",
         format!("An error occurred!\n{}", message).as_str(),
-        msgbox::IconType::Error
-    ).expect("Failed to create messagebox!");
+        msgbox::IconType::Error,
+    )
+    .expect("Failed to create messagebox!");
 }

@@ -2,19 +2,18 @@ extern crate config;
 
 use config::Config;
 
+use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use std::fs::File;
 
 use crate::error;
 
 #[derive(Debug, Clone)]
 pub struct Settings {
-    config: Config
+    config: Config,
 }
 
-const DEFAULT_CONFIG: &[u8] = 
-b"{
+const DEFAULT_CONFIG: &[u8] = b"{
     \"port\": 7685,
     \"keys\": [ \"Z\", \"X\" ],
     \"reset\": \"End\"
@@ -48,7 +47,7 @@ impl Settings {
         // if the config file exists, load it
         if Path::new(name).exists() {
             let builder = Config::builder().add_source(config::File::with_name(name));
-            
+
             match builder.build() {
                 Ok(config) => config,
 
@@ -57,8 +56,7 @@ impl Settings {
                     error::shutdown(1);
                 }
             }
-        }
-        else {
+        } else {
             // create config as it doesnt exist
             let message = "The configuration file could not be found. A default configuration (settings.json) will be created.\n\nPlease read the github wiki (https://github.com/TheRacc2/keyoverlay/wiki) to see configuration guides.";
             error::messagebox(message);
@@ -81,6 +79,8 @@ impl Settings {
     }
 
     pub fn new(name: &str) -> Self {
-        Self { config: Self::try_get_config(name) }
+        Self {
+            config: Self::try_get_config(name),
+        }
     }
 }
