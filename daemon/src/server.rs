@@ -29,6 +29,8 @@ pub async fn websocket_connect(
     request: HttpRequest,
     stream: web::Payload,
 ) -> Result<HttpResponse, Error> {
+    println!("Test detected!");
+
     let response = ws::start(WebSocket {}, &request, stream);
     println!("{:?}", response);
 
@@ -43,8 +45,8 @@ pub async fn spawn_server(settings: Settings) -> std::io::Result<()> {
 
     let server = HttpServer::new(move || {
         App::new()
+            .route("/ws/", web::get().to(websocket_connect))
             .wrap(wrapper)
-            .route("/ws", web::get().to(websocket_connect))
             .service(
                 fs::Files::new("/", WEBFILE_PATH)
                     .show_files_listing()
