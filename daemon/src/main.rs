@@ -91,7 +91,9 @@ fn hook_keyboard(settings: Settings) {
     let reset = settings.read_config::<String>("reset");
 
     let device = DeviceState::new();
+
     let mut last_pressed: Vec<String> = Vec::new();
+    let mut did_reset = false;
     loop {
         let pressed_keycodes: Vec<Keycode> = device.get_keys();
 
@@ -102,13 +104,18 @@ fn hook_keyboard(settings: Settings) {
 
         let pressed = pressed_strings.intersect(keys.clone());
 
-        let do_reset = pressed_strings.contains(&reset);
-        if pressed != last_pressed || do_reset {
-            if do_reset {
-                // send the message "reset" over to every websocket client
-            } else {
-                // send the list "pressed" to every websocket client
+        if pressed_strings.contains(&reset) {
+            if !did_reset {
+                // send "reset" to every websocket client
+
+                did_reset = true;
             }
+        } else {
+            did_reset = false;
+        }
+
+        if pressed != last_pressed {
+            // send the list "pressed" to every websocket client
         }
 
         last_pressed = pressed;
