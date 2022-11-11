@@ -20,9 +20,9 @@ use crate::{error, settings::Settings};
 const WEBFILE_PATH: &str = r"D:\code\projects\keyoverlay\web";
 // const WEBFILE_PATH: &str = r"web"
 
-pub async fn update_clients(pressed: Vec<String>) {
-    // iterate through all websocket clients and send pressed to them
-    let _ = pressed.clone();
+pub fn update_clients(buffer: String) {
+    // iterate through all websocket clients and send buffer to them
+    println!("{buffer}");
 }
 
 pub async fn websocket_connect(

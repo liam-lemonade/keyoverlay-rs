@@ -5,6 +5,7 @@ extern crate device_query;
 extern crate tray_item;
 
 pub mod error;
+pub mod keyboard;
 pub mod server;
 pub mod settings;
 
@@ -12,13 +13,8 @@ use settings::Settings;
 
 use tray_item::TrayItem;
 
-use array_tool::vec::Intersect;
-
-use device_query::{DeviceQuery, DeviceState, Keycode};
-
 use std::sync::mpsc;
 use std::thread;
-use std::vec::Vec;
 
 fn spawn_tray(settings: Settings) {
     let result = TrayItem::new("KeyOverlay Daemon", "keyoverlay-icon");
@@ -86,42 +82,6 @@ fn spawn_tray(settings: Settings) {
     }
 }
 
-fn hook_keyboard(settings: Settings) {
-    let keys = settings.read_config::<Vec<String>>("keys");
-    let reset = settings.read_config::<String>("reset");
-
-    let device = DeviceState::new();
-
-    let mut last_pressed: Vec<String> = Vec::new();
-    let mut did_reset = false;
-    loop {
-        let pressed_keycodes: Vec<Keycode> = device.get_keys();
-
-        let mut pressed_strings: Vec<String> = Vec::new();
-        for key in pressed_keycodes {
-            pressed_strings.push(key.to_string());
-        }
-
-        let pressed = pressed_strings.intersect(keys.clone());
-
-        if pressed_strings.contains(&reset) {
-            if !did_reset {
-                // send "reset" to every websocket client
-
-                did_reset = true;
-            }
-        } else {
-            did_reset = false;
-        }
-
-        if pressed != last_pressed {
-            // send the list "pressed" to every websocket client
-        }
-
-        last_pressed = pressed;
-    }
-}
-
 fn main() {
     let settings = Settings::new("settings.json");
 
@@ -132,7 +92,7 @@ fn main() {
 
     let keyboard_settings = settings.clone();
     thread::spawn(move || {
-        hook_keyboard(keyboard_settings);
+        keyboard::hook_keyboard(keyboard_settings);
     });
 
     let server_settings = settings.clone();
