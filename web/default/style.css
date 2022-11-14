@@ -22,7 +22,9 @@
 
     --history-color: rgba(170, 170, 170, 0.7);
     --history-rounding: 10px;
-    
+
+    /* background-color: rgb(0, 0, 0); */
+
     padding: 0;
     margin: 0;
 }
@@ -52,7 +54,7 @@
 .keybox {
     margin-left: 15px;
     margin-top: 40%;
-    
+
     height: var(--keybox-size);
     width: var(--keybox-size);
 
@@ -74,7 +76,7 @@
 .history {
     --length: 0px;
     --offset: calc(var(--keybox-size) + calc(var(--keybox-thickness) * 2));
-    
+
     height: var(--length);
     width: var(--offset);
 
@@ -83,6 +85,6 @@
     background-color: var(--history-color);
 
     border-radius: var(--history-rounding);
-    
+
     position: absolute;
 }

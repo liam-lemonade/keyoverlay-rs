@@ -62,7 +62,10 @@ fn spawn_tray(settings: Settings) {
         error::shutdown(1);
     });
 
-    let address = format!("http://127.0.0.1:{:?}", settings.read_config::<u16>("port"));
+    let address = format!(
+        "http://127.0.0.1:{:?}",
+        settings.read_config::<u16>("web_port")
+    );
     loop {
         let event = match rx.recv() {
             Ok(data) => data,
@@ -95,8 +98,13 @@ fn main() {
         keyboard::hook_keyboard(keyboard_settings);
     });
 
-    let server_settings = settings.clone();
-    match server::spawn_server(server_settings) {
+    let socket_server_settings = settings.clone();
+    thread::spawn(move || {
+        server::spawn_socket_server(socket_server_settings);
+    });
+
+    let webserver_settings = settings.clone();
+    match server::spawn_webserver(webserver_settings) {
         Ok(_) => {}
 
         Err(error) => {

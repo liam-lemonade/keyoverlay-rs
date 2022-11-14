@@ -14,7 +14,8 @@ pub struct Settings {
 }
 
 const DEFAULT_CONFIG: &[u8] = b"{
-    \"port\": 7685,
+    \"web_port\": 7685,
+    \"socket_port\": 7686,
     \"keys\": [ \"Z\", \"X\" ],
     \"reset\": \"End\"
 }";

@@ -1,5 +1,5 @@
 class Settings {
-    static port = 7685; // check the settings.json file for this
+    static port = 7686; // check the settings.json file for this
     static odometerAnimation = true; // should there be a keypress counter
     static odometerAnimationSpeed = "100ms"; // how fast should the animation for the counter play. set to 0 to disable animation
 
@@ -10,7 +10,7 @@ class Settings {
     static historyPixelsPerSecond = 1000;
 }
 
-let socket = new ReconnectingWebSocket("ws://127.0.0.1:" + Settings.port + "/ws");
+let socket = new ReconnectingWebSocket("ws://127.0.0.1:" + Settings.port);
 
 socket.onopen = () => {
     console.log("Successfully Connected");
