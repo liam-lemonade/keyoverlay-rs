@@ -9,4 +9,4 @@ When using other keyoverlays, I struggled with their rendering transparency, som
 # How easy is "easy"?
 One click is all you need to get started!
 
-Visit the (releases page)[https://github.com/TheRacc2/keyoverlay-rs/releases] to get the newest version.
+Visit the [releases page](https://github.com/TheRacc2/keyoverlay-rs/releases) to get the newest version.
