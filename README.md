@@ -17,7 +17,7 @@ Due to the nature of rust, the only requirements needed are the [Visual C++ Redi
 # How do I add keyoverlay-rs to my stream?
 Because `keyoverlay-rs` is a browser application, it's as easy as adding a browser source!
 
-For more details instructions, see the [setup guide](https://github.com/TheRacc2/keyoverlay-rs/blob/main/setup.md)
+For more details instructions, see the [setup guide](https://github.com/TheRacc2/keyoverlay-rs/blob/main/setup.md).
 
 # How can I help?
 Contributions are always appreciated! This is my first full-scale rust application, so there is certain to be many opportunities for improvements.
