@@ -1,4 +1,7 @@
-//#![windows_subsystem = "windows"] // don't create console window
+#![cfg_attr(
+    all(target_os = "windows", not(feature = "console"),),
+    windows_subsystem = "windows"
+)]
 
 extern crate array_tool;
 extern crate device_query;
