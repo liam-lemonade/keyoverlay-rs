@@ -11,13 +11,10 @@ One click is all you need to get started!
 
 Visit the [releases page](https://github.com/TheRacc2/keyoverlay-rs/releases) to get the newest version.
 
+Check the [Getting Started wiki page](https://TheRacc2/keyoverlay-rs/wiki/getting-started) for more detailed instructions.
+
 # What requirements do I need to start running keyoverlay-rs?
 Due to the nature of rust, the only requirements needed are the [Visual C++ Redistributables](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) and a browser.
-
-# How do I add keyoverlay-rs to my stream?
-Because `keyoverlay-rs` is a browser application, it's as easy as adding a browser source!
-
-For more details instructions, see the [setup guide](https://github.com/TheRacc2/keyoverlay-rs/blob/main/setup.md).
 
 # How can I help?
 Contributions are always appreciated! This is my first full-scale rust application, so there is certain to be many opportunities for improvements.
