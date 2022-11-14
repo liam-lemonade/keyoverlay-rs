@@ -3,9 +3,6 @@ class Settings {
     static odometerAnimation = true; // should there be a keypress counter
     static odometerAnimationSpeed = "100ms"; // how fast should the animation for the counter play. set to 0 to disable animation
 
-    //static keytextOverride = null;
-    static keytextOverride = new Map().set("I", "Z").set("P", "X");
-
     static showHistory = true;
     static historyPixelsPerSecond = 1000;
 }
@@ -107,7 +104,7 @@ function findKey(text) {
     // has this key been pressed before?
     let found = null;
     keysList.every(key => {
-        
+
         if (key.text === text) {
             found = key;
             return false; // array.every breaks on false
@@ -120,7 +117,7 @@ function findKey(text) {
         // key has never been pressed before
         let added = new Key();
         added.text = text;
-        
+
         addNewKeyHTML(added);
         keysList.push(added);
 
@@ -167,7 +164,7 @@ function addNewKeyHTML(keypress) {
     // create parent div
     keypress.div = document.createElement("div");
     keypress.div.className = "keybox";
-    
+
     document.getElementById("keys").appendChild(keypress.div);
 
     // create odometer
@@ -175,7 +172,7 @@ function addNewKeyHTML(keypress) {
         keypress.odometer = document.createElement("div");
         keypress.odometer.className = "counter";
         keypress.div.appendChild(keypress.odometer);
-        
+
         keypress.odometer = new Odometer({
             el: keypress.odometer,
             value: 0,
@@ -185,16 +182,8 @@ function addNewKeyHTML(keypress) {
     // fill text in `keybox-text`
     keypress.keytext = document.createElement("div");
     keypress.keytext.className = "keybox-text";
-    
-    let content = keypress.text;
-    if (Settings.keytextOverride !== null) {
-        let override = Settings.keytextOverride.get(keypress.text)
-        
-        if (override != undefined) {
-            content = override;
-        }
-    }
-    keypress.keytext.innerHTML = content;
+
+    keypress.keytext.innerHTML = keypress.text;
 
     keypress.div.appendChild(keypress.keytext);
 }
@@ -203,11 +192,11 @@ function handleKeyHistory(keypress, down) {
     if (!Settings.showHistory) {
         return;
     }
-    
+
     if (!(keypress instanceof Key)) {
         throw "Attempted to call `handleKeyHistory` where `keypress` was not instanceof `Key`";
     }
-    
+
     if (down) {
         let history = new KeyHistory();
 
@@ -237,7 +226,7 @@ function handleKeyHistory(keypress, down) {
 document.querySelector(':root').style.setProperty("--duration", Settings.odometerAnimationSpeed);
 
 let lastUpdate = Date.now();
-setInterval(function() {
+setInterval(function () {
     let current = Date.now();
     let delta = (current - lastUpdate) / 1000;
 
