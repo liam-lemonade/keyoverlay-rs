@@ -10,3 +10,8 @@ When using other keyoverlays, I struggled with their rendering transparency, som
 One click is all you need to get started!
 
 Visit the [releases page](https://github.com/TheRacc2/keyoverlay-rs/releases) to get the newest version.
+
+# How can **I** help?
+Contributions are always appreciated! This is my first full-scale rust application, so there is certain to be many opportunities for improvements.
+
+Please create a [issue](https://github.com/TheRacc2/keyoverlay-rs/issues) to discuss ideas, and a [pull request](https://github.com/TheRacc2/keyoverlay-rs/pulls) for implemented changes.
