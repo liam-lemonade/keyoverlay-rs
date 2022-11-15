@@ -42,6 +42,8 @@ class Key {
     odometer = null;
 
     history = [];
+
+    canAddNextHistory = true;
 }
 
 // the list of keys that have been pressed so far
@@ -110,6 +112,7 @@ function onKeyDown(text) {
     let key = findKey(text);
 
     if (key === null) {
+        console.log("Adding key: " + text);
         key = addKeyFromString(text);
     }
 
@@ -177,29 +180,35 @@ function addNewKeyHTML(keypress) {
     keypress.div.appendChild(keypress.keytext);
 }
 
-function handleKeyHistory(keypress, down) {
+function handleKeyHistory(key, down) {
     if (!Settings.showHistory) {
         return;
     }
 
-    if (!(keypress instanceof Key)) {
+    if (!(key instanceof Key)) {
         throw "Attempted to call `handleKeyHistory` where `keypress` was not instanceof `Key`";
     }
 
     if (down) {
-        let history = new KeyHistory();
+        if (key.canAddNextHistory) {
+            key.canAddNextHistory = false;
 
-        // add new history div with class #history
-        history.div = document.createElement("div");
-        history.div.className = "history";
-        history.div.style = "--length: 0px;"
-        history.pressed = true;
+            let history = new KeyHistory();
 
-        keypress.div.appendChild(history.div);
-        keypress.history.push(history);
+            // add new history div with class #history
+            history.div = document.createElement("div");
+            history.div.className = "history";
+            history.div.style = "--length: 0px;"
+            history.pressed = true;
+
+            key.div.appendChild(history.div);
+            key.history.push(history);
+        }
     }
     else {
-        let history = keypress.history[keypress.history.length - 1];
+        key.canAddNextHistory = true;
+
+        let history = key.history[key.history.length - 1];
         history.pressed = false;
     }
     /*

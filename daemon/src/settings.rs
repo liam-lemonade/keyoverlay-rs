@@ -6,7 +6,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
-use crate::error;
+use crate::error::{self, ExitStatus};
 
 #[derive(Debug, Clone)]
 pub struct Settings {
@@ -30,7 +30,7 @@ impl Settings {
 
             Err(error) => {
                 error::handle_error("Failed to create default file.", error);
-                error::shutdown(1);
+                error::shutdown(ExitStatus::Failure);
             }
         };
 
@@ -39,7 +39,7 @@ impl Settings {
 
             Err(error) => {
                 error::handle_error("Failed to write default config.", error);
-                error::shutdown(1);
+                error::shutdown(ExitStatus::Failure);
             }
         }
     }
@@ -54,7 +54,7 @@ impl Settings {
 
                 Err(error) => {
                     error::handle_error("Failed to get config! Deleting the file (settings.json) and re-opening the program may fix this issue.", error);
-                    error::shutdown(1);
+                    error::shutdown(ExitStatus::Failure);
                 }
             }
         } else {
@@ -74,7 +74,7 @@ impl Settings {
 
             Err(error) => {
                 error::handle_error("Failed to read config! Deleting the file (settings.json) and re-opening the program may fix this issue.", error);
-                error::shutdown(1);
+                error::shutdown(ExitStatus::Failure);
             }
         } // no ; returns straight out of match statement
     }

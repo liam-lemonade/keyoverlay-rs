@@ -15,8 +15,8 @@ use simple_websockets::{Event, Message, Responder};
 
 use crate::{error, settings::Settings};
 
-const WEBFILE_PATH: &str = r"D:\code\projects\keyoverlay\web";
-//const WEBFILE_PATH: &str = r"web";
+//const WEBFILE_PATH: &str = r"D:\code\projects\keyoverlay\web";
+const WEBFILE_PATH: &str = r"web";
 
 lazy_static! {
     static ref CLIENT_LIST: Arc<Mutex<HashMap<u64, Responder>>> =
@@ -27,7 +27,7 @@ lazy_static! {
 
 pub fn update_clients(buffer: String) {
     thread::spawn(move || {
-        println!("Updating clients, where buffer == {}", &buffer);
+        //println!("Updating clients, where buffer == {}", &buffer);
 
         for client in CLIENT_LIST.lock().unwrap().iter() {
             client.1.send(Message::Text(buffer.clone()));

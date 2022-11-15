@@ -1,86 +1,188 @@
 use std::collections::HashMap;
 use std::vec::Vec;
 
-use crate::error;
-use crate::server;
+use crate::error::ExitStatus;
 use crate::settings::Settings;
+use crate::{error, server};
+use rdev::{Event, EventType, Key};
 
-pub fn event_callback(event: rdev::Event) {}
+pub fn key_as_str(key: Key) -> &'static str {
+    match key {
+        Key::Alt => "Alt",
+        Key::AltGr => "AltGr",
+        Key::Backspace => "Backspace",
+        Key::CapsLock => "CapsLock",
+        Key::ControlLeft => "ControlLeft",
+        Key::ControlRight => "ControlRight",
+        Key::Delete => "Delte",
+        Key::DownArrow => "ArrowDown",
+        Key::End => "End",
+        Key::Escape => "Escape",
+        Key::F1 => "F1",
+        Key::F10 => "F10",
+        Key::F11 => "F11",
+        Key::F12 => "F12",
+        Key::F2 => "F2",
+        Key::F3 => "F3",
+        Key::F4 => "F4",
+        Key::F5 => "F5",
+        Key::F6 => "F6",
+        Key::F7 => "F7",
+        Key::F8 => "F8",
+        Key::F9 => "F9",
+        Key::Home => "Home",
+        Key::LeftArrow => "ArrowLeft",
+        Key::MetaLeft => "MetaLeft",
+        Key::MetaRight => "MetaRight",
+        Key::PageDown => "PageDown",
+        Key::PageUp => "PageUp",
+        Key::Return => "Enter",
+        Key::RightArrow => "ArrowRight",
+        Key::ShiftLeft => "ShiftLeft",
+        Key::ShiftRight => "ShiftRight",
+        Key::Space => "Space",
+        Key::Tab => "Tab",
+        Key::UpArrow => "ArrowUp",
+        Key::PrintScreen => "PrintScreen",
+        Key::ScrollLock => "ScrollLock",
+        Key::Pause => "Pause",
+        Key::NumLock => "Pause",
+        Key::BackQuote => "`",
+        Key::Num1 => "1",
+        Key::Num2 => "2",
+        Key::Num3 => "3",
+        Key::Num4 => "4",
+        Key::Num5 => "5",
+        Key::Num6 => "6",
+        Key::Num7 => "7",
+        Key::Num8 => "8",
+        Key::Num9 => "9",
+        Key::Num0 => "0",
+        Key::Minus => "-",
+        Key::Equal => "=",
+        Key::KeyQ => "Q",
+        Key::KeyW => "W",
+        Key::KeyE => "E",
+        Key::KeyR => "R",
+        Key::KeyT => "T",
+        Key::KeyY => "Y",
+        Key::KeyU => "U",
+        Key::KeyI => "I",
+        Key::KeyO => "O",
+        Key::KeyP => "P",
+        Key::LeftBracket => "[",
+        Key::RightBracket => "]",
+        Key::KeyA => "A",
+        Key::KeyS => "S",
+        Key::KeyD => "D",
+        Key::KeyF => "F",
+        Key::KeyG => "G",
+        Key::KeyH => "H",
+        Key::KeyJ => "J",
+        Key::KeyK => "K",
+        Key::KeyL => "L",
+        Key::SemiColon => ";",
+        Key::Quote => "Quote",
+        Key::BackSlash => "\\",
+        Key::IntlBackslash => "\\",
+        Key::KeyZ => "Z",
+        Key::KeyX => "X",
+        Key::KeyC => "C",
+        Key::KeyV => "V",
+        Key::KeyB => "B",
+        Key::KeyN => "N",
+        Key::KeyM => "M",
+        Key::Comma => ",",
+        Key::Dot => ".",
+        Key::Slash => "/",
+        Key::Insert => "Insert",
+        Key::KpReturn => "Return",
+        Key::KpMinus => "-",
+        Key::KpPlus => "+",
+        Key::KpMultiply => "*",
+        Key::KpDivide => "/",
+        Key::Kp0 => "0",
+        Key::Kp1 => "1",
+        Key::Kp2 => "2",
+        Key::Kp3 => "3",
+        Key::Kp4 => "4",
+        Key::Kp5 => "5",
+        Key::Kp6 => "6",
+        Key::Kp7 => "7",
+        Key::Kp8 => "8",
+        Key::Kp9 => "9",
+        Key::KpDelete => "Delte",
+        Key::Function => "Function",
+        Key::Unknown(_) => "Unknown",
+    }
+}
 
-pub fn hook_keyboard(settings: Settings) {
-    let keys = settings.read_config::<Vec<String>>("keys");
+pub fn key_to_string(key: Key) -> String {
+    return key_as_str(key).to_string();
+}
+
+pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, String>, &'static str> {
     let mut key_map = HashMap::<String, String>::with_capacity(keys.len());
 
-    // create hashmap mask
     for key in keys {
-        if key.contains(":") {
-            let split: Vec<&str> = key.split(":").collect();
+        if !key.contains(":") {
+            key_map.insert(key.clone(), key);
+            continue;
+        }
 
-            match split.first() {
-                Some(str) => match split.last() {
-                    Some(str2) => {
-                        key_map.insert(str.to_string(), str2.to_string()); // key:mask
+        let split: Vec<String> = key.split(":").map(|s| s.to_string()).collect();
+
+        let first = split.first().ok_or("Failed to get |split.first()|")?;
+        let last = split.last().ok_or("Failed to get |split.last()|")?;
+
+        key_map.insert(first.to_owned(), last.to_owned());
+    }
+
+    return Ok(key_map);
+}
+
+pub fn hook_keyboard(settings: Settings) {
+    let keys = match build_keymap(settings.read_config::<Vec<String>>("keys")) {
+        Ok(map) => map,
+
+        Err(error) => {
+            error::messagebox(error as &str);
+            error::shutdown(ExitStatus::Failure);
+        }
+    };
+
+    let callback = move |event: Event| {
+        match event.event_type {
+            EventType::KeyRelease(key) => {
+                let key_str = key_to_string(key);
+
+                if keys.contains_key(&key_str) {
+                    if let Some(mask) = keys.get(&key_str) {
+                        // key_str is the monitored key, mask is the value to send
+                        // send it to the clients
+                        server::update_clients(format!("[0, \"{}\"]", mask));
                     }
-
-                    None => {
-                        error::messagebox("Failed to split key:mask at last!");
-                        error::shutdown(1);
-                    }
-                },
-
-                None => {
-                    error::messagebox("Failed to split key:mask at first!");
-                    error::shutdown(1);
                 }
             }
-        } else {
-            key_map.insert(key.clone(), key.clone()); // key:key
+
+            EventType::KeyPress(key) => {
+                let key_str = key_to_string(key);
+
+                if keys.contains_key(&key_str) {
+                    if let Some(mask) = keys.get(&key_str) {
+                        // key_str is the monitored key, mask is the value to send
+                        // send it to the clients
+                        server::update_clients(format!("[1, \"{}\"]", mask));
+                    }
+                }
+            }
+
+            _ => {}
         }
-    }
-    println!("Created key HashMap:\n{:?}\n", &key_map);
-
-    let reset = settings.read_config::<String>("reset");
-
-    let callback = |event: rdev::Event| {};
+    };
 
     if let Err(error) = rdev::listen(callback) {
-        error::handle_error("Error while listening to input", error);
-        error::shutdown(1);
+        error::handle_error("Error while listening to keyboard input", error);
+        error::shutdown(ExitStatus::Failure);
     }
-
-    /*
-    let device_state = DeviceState::new();
-
-    let reset = settings.read_config::<String>("reset");
-
-    let key_map_clone = key_map.clone();
-    let _guard = device_state.on_key_down(move |key| {
-        let key_str = key.to_string();
-
-        if &key_str == &reset {
-            server::update_clients("reset".to_string());
-            return;
-        }
-
-        if key_map_clone.contains_key(&key_str) {
-            if let Some(found) = key_map_clone.get(&key_str) {
-                let msg = format!("[1, \"{}\"]", found);
-                server::update_clients(msg)
-            }
-        }
-    });
-    println!("Placed 'on_key_down' hook");
-
-    let _guard = device_state.on_key_up(move |key| {
-        let key_str = key.to_string();
-
-        if key_map.contains_key(&key_str) {
-            if let Some(found) = key_map.get(&key_str) {
-                let msg = format!("[0, \"{}\"]", found);
-                server::update_clients(msg)
-            }
-        }
-    });
-    println!("Place 'on_key_up' hook");
-    */
 }
