@@ -1,10 +1,14 @@
 extern crate msgbox;
-extern crate serde;
 
 use std::fmt::Debug;
 
-pub fn shutdown(code: i32) -> ! {
-    std::process::exit(code);
+pub enum ExitStatus {
+    Success = 0,
+    Failure = 1,
+}
+
+pub fn shutdown(code: ExitStatus) -> ! {
+    std::process::exit(code as i32);
 }
 
 pub fn messagebox(text: &str) {

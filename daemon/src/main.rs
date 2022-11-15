@@ -3,8 +3,6 @@
     windows_subsystem = "windows"
 )]
 
-extern crate array_tool;
-extern crate device_query;
 extern crate tray_item;
 
 pub mod error;
@@ -16,6 +14,7 @@ use settings::Settings;
 
 use tray_item::TrayItem;
 
+use error::ExitStatus;
 use std::sync::mpsc;
 use std::thread;
 
@@ -27,7 +26,7 @@ fn spawn_tray(settings: Settings) {
 
         Err(error) => {
             error::handle_error("Failed to create tray item!", error);
-            error::shutdown(1);
+            error::shutdown(ExitStatus::Failure);
         }
     };
 
@@ -45,24 +44,24 @@ fn spawn_tray(settings: Settings) {
                 "Failed to send Open Overlay interaction across mpsc!",
                 error,
             );
-            error::shutdown(1);
+            error::shutdown(ExitStatus::Failure);
         });
     })
     .unwrap_or_else(|error| {
         error::handle_error("Failed to add menu element to tray item!", error);
-        error::shutdown(1);
+        error::shutdown(ExitStatus::Failure);
     });
 
     let quit_tx = tx.clone();
     tray.add_menu_item("Quit", move || {
         quit_tx.send(TrayMessage::Die).unwrap_or_else(|error| {
             error::handle_error("Failed to send Quit interaction across mpsc!", error);
-            error::shutdown(1);
+            error::shutdown(ExitStatus::Failure);
         });
     })
     .unwrap_or_else(|error| {
         error::handle_error("Failed to add menu element to tray item!", error);
-        error::shutdown(1);
+        error::shutdown(ExitStatus::Failure);
     });
 
     let address = format!(
@@ -83,7 +82,7 @@ fn spawn_tray(settings: Settings) {
                 Err(error) => error::handle_error("Failed to open overlay in browser!", error),
             },
 
-            TrayMessage::Die => error::shutdown(0),
+            TrayMessage::Die => error::shutdown(ExitStatus::Success),
         }
     }
 }
@@ -96,15 +95,13 @@ fn main() {
         spawn_tray(tray_settings);
     });
 
-    let keyboard_settings = settings.clone();
-    thread::spawn(move || {
-        keyboard::hook_keyboard(keyboard_settings);
-    });
-
     let socket_server_settings = settings.clone();
     thread::spawn(move || {
         server::spawn_socket_server(socket_server_settings);
     });
+
+    let keyboard_settings = settings.clone();
+    thread::spawn(move || keyboard::hook_keyboard(keyboard_settings));
 
     let webserver_settings = settings.clone();
     match server::spawn_webserver(webserver_settings) {
@@ -112,9 +109,9 @@ fn main() {
 
         Err(error) => {
             error::handle_error("HttpServer did not exit gracefully.", error);
-            error::shutdown(1);
+            error::shutdown(ExitStatus::Failure);
         }
     };
 
-    error::shutdown(0);
+    error::shutdown(ExitStatus::Success);
 }

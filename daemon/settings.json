@@ -1,6 +1,9 @@
 {
     "web_port": 7685,
     "socket_port": 7686,
-    "keys": [ "Z", "X" ],
+    "keys": [
+        ",:Z",
+        "/:X"
+    ],
     "reset": "End"
 }

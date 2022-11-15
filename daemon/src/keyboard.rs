@@ -1,110 +1,188 @@
-use array_tool::vec::Intersect;
-
-use device_query::{DeviceQuery, DeviceState, Keycode};
-
 use std::collections::HashMap;
 use std::vec::Vec;
 
-use crate::error;
-use crate::server;
+use crate::error::ExitStatus;
 use crate::settings::Settings;
+use crate::{error, server};
+use rdev::{Event, EventType, Key};
 
-fn mask_keys(pressed: Vec<String>, mask: HashMap<String, String>) -> Vec<String> {
-    let mut ret = pressed;
+pub fn key_as_str(key: Key) -> &'static str {
+    match key {
+        Key::Alt => "Alt",
+        Key::AltGr => "AltGr",
+        Key::Backspace => "Backspace",
+        Key::CapsLock => "CapsLock",
+        Key::ControlLeft => "ControlLeft",
+        Key::ControlRight => "ControlRight",
+        Key::Delete => "Delte",
+        Key::DownArrow => "ArrowDown",
+        Key::End => "End",
+        Key::Escape => "Escape",
+        Key::F1 => "F1",
+        Key::F10 => "F10",
+        Key::F11 => "F11",
+        Key::F12 => "F12",
+        Key::F2 => "F2",
+        Key::F3 => "F3",
+        Key::F4 => "F4",
+        Key::F5 => "F5",
+        Key::F6 => "F6",
+        Key::F7 => "F7",
+        Key::F8 => "F8",
+        Key::F9 => "F9",
+        Key::Home => "Home",
+        Key::LeftArrow => "ArrowLeft",
+        Key::MetaLeft => "MetaLeft",
+        Key::MetaRight => "MetaRight",
+        Key::PageDown => "PageDown",
+        Key::PageUp => "PageUp",
+        Key::Return => "Enter",
+        Key::RightArrow => "ArrowRight",
+        Key::ShiftLeft => "ShiftLeft",
+        Key::ShiftRight => "ShiftRight",
+        Key::Space => "Space",
+        Key::Tab => "Tab",
+        Key::UpArrow => "ArrowUp",
+        Key::PrintScreen => "PrintScreen",
+        Key::ScrollLock => "ScrollLock",
+        Key::Pause => "Pause",
+        Key::NumLock => "Pause",
+        Key::BackQuote => "`",
+        Key::Num1 => "1",
+        Key::Num2 => "2",
+        Key::Num3 => "3",
+        Key::Num4 => "4",
+        Key::Num5 => "5",
+        Key::Num6 => "6",
+        Key::Num7 => "7",
+        Key::Num8 => "8",
+        Key::Num9 => "9",
+        Key::Num0 => "0",
+        Key::Minus => "-",
+        Key::Equal => "=",
+        Key::KeyQ => "Q",
+        Key::KeyW => "W",
+        Key::KeyE => "E",
+        Key::KeyR => "R",
+        Key::KeyT => "T",
+        Key::KeyY => "Y",
+        Key::KeyU => "U",
+        Key::KeyI => "I",
+        Key::KeyO => "O",
+        Key::KeyP => "P",
+        Key::LeftBracket => "[",
+        Key::RightBracket => "]",
+        Key::KeyA => "A",
+        Key::KeyS => "S",
+        Key::KeyD => "D",
+        Key::KeyF => "F",
+        Key::KeyG => "G",
+        Key::KeyH => "H",
+        Key::KeyJ => "J",
+        Key::KeyK => "K",
+        Key::KeyL => "L",
+        Key::SemiColon => ";",
+        Key::Quote => "Quote",
+        Key::BackSlash => "\\",
+        Key::IntlBackslash => "\\",
+        Key::KeyZ => "Z",
+        Key::KeyX => "X",
+        Key::KeyC => "C",
+        Key::KeyV => "V",
+        Key::KeyB => "B",
+        Key::KeyN => "N",
+        Key::KeyM => "M",
+        Key::Comma => ",",
+        Key::Dot => ".",
+        Key::Slash => "/",
+        Key::Insert => "Insert",
+        Key::KpReturn => "Return",
+        Key::KpMinus => "-",
+        Key::KpPlus => "+",
+        Key::KpMultiply => "*",
+        Key::KpDivide => "/",
+        Key::Kp0 => "0",
+        Key::Kp1 => "1",
+        Key::Kp2 => "2",
+        Key::Kp3 => "3",
+        Key::Kp4 => "4",
+        Key::Kp5 => "5",
+        Key::Kp6 => "6",
+        Key::Kp7 => "7",
+        Key::Kp8 => "8",
+        Key::Kp9 => "9",
+        Key::KpDelete => "Delte",
+        Key::Function => "Function",
+        Key::Unknown(_) => "Unknown",
+    }
+}
 
-    for e in ret.iter_mut() {
-        if mask.contains_key(&e.clone()) {
-            match mask.get(&e.clone()) {
-                Some(found) => {
-                    *e = found.to_owned();
-                }
+pub fn key_to_string(key: Key) -> String {
+    return key_as_str(key).to_string();
+}
 
-                None => {}
-            }
+pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, String>, &'static str> {
+    let mut key_map = HashMap::<String, String>::with_capacity(keys.len());
+
+    for key in keys {
+        if !key.contains(":") {
+            key_map.insert(key.clone(), key);
+            continue;
         }
+
+        let split: Vec<String> = key.split(":").map(|s| s.to_string()).collect();
+
+        let first = split.first().ok_or("Failed to get |split.first()|")?;
+        let last = split.last().ok_or("Failed to get |split.last()|")?;
+
+        key_map.insert(first.to_owned(), last.to_owned());
     }
 
-    return ret;
+    return Ok(key_map);
 }
 
 pub fn hook_keyboard(settings: Settings) {
-    let mut keys = settings.read_config::<Vec<String>>("keys");
-    let mut mask = HashMap::<String, String>::with_capacity(keys.len());
+    let keys = match build_keymap(settings.read_config::<Vec<String>>("keys")) {
+        Ok(map) => map,
 
-    // create hashmap mask
-    for key in settings.read_config::<Vec<String>>("keys") {
-        if key.contains(":") {
-            let split: Vec<&str> = key.split(":").collect();
+        Err(error) => {
+            error::messagebox(error as &str);
+            error::shutdown(ExitStatus::Failure);
+        }
+    };
 
-            match split.first() {
-                Some(str) => match split.last() {
-                    Some(str2) => {
-                        mask.insert(str.to_string(), str2.to_string()); // key:mask
+    let callback = move |event: Event| {
+        match event.event_type {
+            EventType::KeyRelease(key) => {
+                let key_str = key_to_string(key);
+
+                if keys.contains_key(&key_str) {
+                    if let Some(mask) = keys.get(&key_str) {
+                        // key_str is the monitored key, mask is the value to send
+                        // send it to the clients
+                        server::update_clients(format!("[0, \"{}\"]", mask));
                     }
-
-                    None => {
-                        error::messagebox("Failed to split key:mask at last!");
-                        error::shutdown(1);
-                    }
-                },
-
-                None => {
-                    error::messagebox("Failed to split key:mask at first!");
-                    error::shutdown(1);
                 }
             }
-        } else {
-            mask.insert(key.clone(), key.clone()); // key:key
-        }
-    }
 
-    // set keys to the actual keys to monitor
-    keys = mask.keys().cloned().collect::<Vec<String>>();
-    println!("Keys: {:?}\nMask: {:?}", keys, mask);
+            EventType::KeyPress(key) => {
+                let key_str = key_to_string(key);
 
-    let reset = settings.read_config::<String>("reset");
-
-    let device = DeviceState::new();
-
-    let mut last_pressed: Vec<String> = Vec::new();
-    let mut did_reset = false;
-    loop {
-        let pressed_keycodes: Vec<Keycode> = device.get_keys();
-
-        // string-ify keycode
-        let mut pressed_strings: Vec<String> = Vec::new();
-        for key in pressed_keycodes {
-            pressed_strings.push(key.to_string());
-        }
-
-        // check what monitored keys are pressed
-        let pressed = pressed_strings.intersect(keys.clone());
-
-        if pressed_strings.contains(&reset) {
-            if !did_reset {
-                // send "reset" to every websocket client
-                server::update_clients("reset".to_string());
-
-                did_reset = true;
+                if keys.contains_key(&key_str) {
+                    if let Some(mask) = keys.get(&key_str) {
+                        // key_str is the monitored key, mask is the value to send
+                        // send it to the clients
+                        server::update_clients(format!("[1, \"{}\"]", mask));
+                    }
+                }
             }
-        } else {
-            did_reset = false;
+
+            _ => {}
         }
+    };
 
-        if pressed != last_pressed {
-            // mask keys based on the config
-            let masked_pressed = mask_keys(pressed.clone(), mask.clone());
-
-            // send the list "pressed" to every websocket client
-            let result = serde_json::to_string(&masked_pressed);
-
-            match result {
-                Ok(json) => server::update_clients(json),
-
-                Err(error) => error::handle_error("Failed to serialize pressed keys!", error),
-            }
-        }
-
-        last_pressed = pressed;
+    if let Err(error) = rdev::listen(callback) {
+        error::handle_error("Error while listening to keyboard input", error);
+        error::shutdown(ExitStatus::Failure);
     }
 }

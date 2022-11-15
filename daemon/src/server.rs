@@ -4,6 +4,7 @@ extern crate actix_web;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
+    thread,
 };
 
 use actix_files as fs;
@@ -25,9 +26,13 @@ lazy_static! {
 // const WEBFILE_PATH: &str = r"web"
 
 pub fn update_clients(buffer: String) {
-    for client in CLIENT_LIST.lock().unwrap().iter() {
-        client.1.send(Message::Text(buffer.clone()));
-    }
+    thread::spawn(move || {
+        //println!("Updating clients, where buffer == {}", &buffer);
+
+        for client in CLIENT_LIST.lock().unwrap().iter() {
+            client.1.send(Message::Text(buffer.clone()));
+        }
+    });
 }
 
 #[actix_web::main]
