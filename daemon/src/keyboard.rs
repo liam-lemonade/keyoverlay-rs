@@ -1,12 +1,11 @@
-use device_query::DeviceEvents;
-use device_query::DeviceState;
-
 use std::collections::HashMap;
 use std::vec::Vec;
 
 use crate::error;
 use crate::server;
 use crate::settings::Settings;
+
+pub fn event_callback(event: rdev::Event) {}
 
 pub fn hook_keyboard(settings: Settings) {
     let keys = settings.read_config::<Vec<String>>("keys");
@@ -40,6 +39,16 @@ pub fn hook_keyboard(settings: Settings) {
     }
     println!("Created key HashMap:\n{:?}\n", &key_map);
 
+    let reset = settings.read_config::<String>("reset");
+
+    let callback = |event: rdev::Event| {};
+
+    if let Err(error) = rdev::listen(callback) {
+        error::handle_error("Error while listening to input", error);
+        error::shutdown(1);
+    }
+
+    /*
     let device_state = DeviceState::new();
 
     let reset = settings.read_config::<String>("reset");
@@ -73,4 +82,5 @@ pub fn hook_keyboard(settings: Settings) {
         }
     });
     println!("Place 'on_key_up' hook");
+    */
 }

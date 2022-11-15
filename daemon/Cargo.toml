@@ -11,7 +11,7 @@ actix-files = "0.6.2"
 actix = "0.13.0"
 actix-web-lab = "0.18.3"
 
-device_query = "1.1.1"
+rdev = "0.5.2"
 
 config = "0.13.1"
 serde = "1.0.145"
