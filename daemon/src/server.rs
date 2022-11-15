@@ -16,7 +16,12 @@ use simple_websockets::{Event, Message, Responder};
 use crate::{error, settings::Settings};
 
 //const WEBFILE_PATH: &str = r"D:\code\projects\keyoverlay\web";
-const WEBFILE_PATH: &str = r"web";
+
+const WEBFILE_PATH: &str = if cfg!(feature = "debug") {
+    r"D:\code\projects\keyoverlay\web"
+} else {
+    r"web"
+};
 
 lazy_static! {
     static ref CLIENT_LIST: Arc<Mutex<HashMap<u64, Responder>>> =
