@@ -1,0 +1,32 @@
+@font-face {
+    font-family: "Roboto-Bold";
+    src: url("deps/Roboto-Bold.ttf");
+}
+
+:root {
+    --text-color: #FFF;
+    --text-size: 36pt;
+    --text-font: "Tahoma";
+
+    /* background-color: rgb(0, 0, 0); */
+
+    padding: 0;
+    margin: 0;
+}
+
+#bpm {
+    font-family: var(--text-font);
+
+    font-size: var(--text-size);
+    color: var(--text-color);
+
+    display: flex;
+    position: relative;
+    top: 90%;
+
+    white-space: nowrap;
+}
+
+#bpm::after {
+    content: "BPM"
+}

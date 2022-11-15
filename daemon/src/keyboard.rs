@@ -151,16 +151,33 @@ pub fn hook_keyboard(settings: Settings) {
         }
     };
 
+    let reset = settings.read_config::<String>("reset");
+
+    let mut held_keys: Vec<String> = Vec::new();
+
     let callback = move |event: Event| {
         match event.event_type {
             EventType::KeyRelease(key) => {
                 let key_str = key_to_string(key);
+
+                if key_str == reset {
+                    server::update_clients("reset".to_string());
+                    return;
+                }
 
                 if keys.contains_key(&key_str) {
                     if let Some(mask) = keys.get(&key_str) {
                         // key_str is the monitored key, mask is the value to send
                         // send it to the clients
                         server::update_clients(format!("[0, \"{}\"]", mask));
+
+                        match held_keys.iter().position(|x| *x == key_str) {
+                            Some(index) => {
+                                held_keys.remove(index);
+                            }
+
+                            None => {}
+                        }
                     }
                 }
             }
@@ -168,11 +185,16 @@ pub fn hook_keyboard(settings: Settings) {
             EventType::KeyPress(key) => {
                 let key_str = key_to_string(key);
 
+                if held_keys.contains(&key_str) {
+                    return;
+                }
+
                 if keys.contains_key(&key_str) {
                     if let Some(mask) = keys.get(&key_str) {
                         // key_str is the monitored key, mask is the value to send
                         // send it to the clients
                         server::update_clients(format!("[1, \"{}\"]", mask));
+                        held_keys.push(key_str);
                     }
                 }
             }
