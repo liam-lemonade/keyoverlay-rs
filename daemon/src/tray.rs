@@ -49,14 +49,15 @@ pub fn handle_tray(settings: Settings) -> Result<()> {
 
     let address = format!(
         "http://127.0.0.1:{:?}",
-        settings.read_config::<u16>("web_port")
+        settings.read_config::<u16>("web_port")?
     );
+
     loop {
         let event = rx.recv()?; // big issue if this doesnt recieve, the channel has closed
 
         match event {
             TrayMessage::Open => {
-                open::that(String::from(address.clone()))?;
+                open::that(&address)?;
             }
 
             TrayMessage::Quit => error::shutdown(ExitStatus::Success),
