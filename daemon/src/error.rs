@@ -1,5 +1,4 @@
 extern crate msgbox;
-extern crate serde;
 
 use std::fmt::Debug;
 

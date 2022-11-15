@@ -14,7 +14,6 @@ actix-web-lab = "0.18.3"
 device_query = "1.1.1"
 
 config = "0.13.1"
-array_tool = "1.0.3"
 serde = "1.0.145"
 
 msgbox = "0.7.0"

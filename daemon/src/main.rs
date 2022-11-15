@@ -3,8 +3,6 @@
     windows_subsystem = "windows"
 )]
 
-extern crate array_tool;
-extern crate device_query;
 extern crate tray_item;
 
 pub mod error;
@@ -96,15 +94,13 @@ fn main() {
         spawn_tray(tray_settings);
     });
 
-    let keyboard_settings = settings.clone();
-    thread::spawn(move || {
-        keyboard::hook_keyboard(keyboard_settings);
-    });
-
     let socket_server_settings = settings.clone();
     thread::spawn(move || {
         server::spawn_socket_server(socket_server_settings);
     });
+
+    let keyboard_settings = settings.clone();
+    keyboard::hook_keyboard(keyboard_settings);
 
     let webserver_settings = settings.clone();
     match server::spawn_webserver(webserver_settings) {
