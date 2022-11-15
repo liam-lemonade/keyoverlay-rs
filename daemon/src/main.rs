@@ -3,115 +3,59 @@
     windows_subsystem = "windows"
 )]
 
-extern crate tray_item;
+extern crate anyhow;
+
+use settings::Settings;
+
+use error::ExitStatus;
+use std::thread;
 
 pub mod error;
 pub mod keyboard;
 pub mod server;
 pub mod settings;
+pub mod tray;
 
-use settings::Settings;
-
-use tray_item::TrayItem;
-
-use error::ExitStatus;
-use std::sync::mpsc;
-use std::thread;
-
-fn spawn_tray(settings: Settings) {
-    let result = TrayItem::new("KeyOverlay Daemon", "keyoverlay-icon");
-
-    let mut tray = match result {
-        Ok(instance) => instance,
-
-        Err(error) => {
-            error::handle_error("Failed to create tray item!", error);
-            error::shutdown(ExitStatus::Failure);
-        }
-    };
-
-    let (tx, rx) = mpsc::channel();
-
-    enum TrayMessage {
-        OpenSite,
-        Die,
-    }
-
-    let open_tx = tx.clone();
-    tray.add_menu_item("Open Overlay", move || {
-        open_tx.send(TrayMessage::OpenSite).unwrap_or_else(|error| {
-            error::handle_error(
-                "Failed to send Open Overlay interaction across mpsc!",
-                error,
-            );
-            error::shutdown(ExitStatus::Failure);
-        });
-    })
-    .unwrap_or_else(|error| {
-        error::handle_error("Failed to add menu element to tray item!", error);
+fn main() -> anyhow::Result<()> {
+    let settings = Settings::new("settings.json").unwrap_or_else(|error| {
+        error::handle_error(
+            "An error occured while attempting to get the configuration",
+            error,
+        );
         error::shutdown(ExitStatus::Failure);
     });
-
-    let quit_tx = tx.clone();
-    tray.add_menu_item("Quit", move || {
-        quit_tx.send(TrayMessage::Die).unwrap_or_else(|error| {
-            error::handle_error("Failed to send Quit interaction across mpsc!", error);
-            error::shutdown(ExitStatus::Failure);
-        });
-    })
-    .unwrap_or_else(|error| {
-        error::handle_error("Failed to add menu element to tray item!", error);
-        error::shutdown(ExitStatus::Failure);
-    });
-
-    let address = format!(
-        "http://127.0.0.1:{:?}",
-        settings.read_config::<u16>("web_port")
-    );
-    loop {
-        let event = match rx.recv() {
-            Ok(data) => data,
-
-            Err(_) => continue, // hopefully they press it again
-        };
-
-        match event {
-            TrayMessage::OpenSite => match open::that(String::from(address.clone())) {
-                Ok(_) => {}
-
-                Err(error) => error::handle_error("Failed to open overlay in browser!", error),
-            },
-
-            TrayMessage::Die => error::shutdown(ExitStatus::Success),
-        }
-    }
-}
-
-fn main() {
-    let settings = Settings::new("settings.json");
 
     let tray_settings = settings.clone();
     thread::spawn(move || {
-        spawn_tray(tray_settings);
+        if let Err(error) = tray::handle_tray(tray_settings) {
+            error::handle_error("An error occured while running the tray thread", error);
+            error::shutdown(ExitStatus::Failure);
+        }
     });
 
     let socket_server_settings = settings.clone();
     thread::spawn(move || {
-        server::spawn_socket_server(socket_server_settings);
+        if let Err(error) = server::spawn_socket_server(socket_server_settings) {
+            error::handle_error(
+                "An error occured while running the socket server thread",
+                error,
+            );
+            error::shutdown(ExitStatus::Failure);
+        }
     });
 
     let keyboard_settings = settings.clone();
-    thread::spawn(move || keyboard::hook_keyboard(keyboard_settings));
-
-    let webserver_settings = settings.clone();
-    match server::spawn_webserver(webserver_settings) {
-        Ok(_) => {}
-
-        Err(error) => {
-            error::handle_error("HttpServer did not exit gracefully.", error);
+    thread::spawn(move || {
+        if let Err(error) = keyboard::hook_keyboard(keyboard_settings) {
+            error::handle_error("An error occured while running the keyboard thread", error);
             error::shutdown(ExitStatus::Failure);
         }
-    };
+    });
+
+    if let Err(error) = server::spawn_webserver(settings) {
+        error::handle_error("HttpServer did not exit gracefully.", error);
+        error::shutdown(ExitStatus::Failure);
+    }
 
     error::shutdown(ExitStatus::Success);
 }

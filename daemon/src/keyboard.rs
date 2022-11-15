@@ -1,9 +1,11 @@
+extern crate anyhow;
+
+use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::vec::Vec;
 
-use crate::error::ExitStatus;
+use crate::server;
 use crate::settings::Settings;
-use crate::{error, server};
 use rdev::{Event, EventType, Key};
 
 pub fn key_as_str(key: Key) -> &'static str {
@@ -121,7 +123,7 @@ pub fn key_to_string(key: Key) -> String {
     return key_as_str(key).to_string();
 }
 
-pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, String>, &'static str> {
+pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, String>> {
     let mut key_map = HashMap::<String, String>::with_capacity(keys.len());
 
     for key in keys {
@@ -132,8 +134,11 @@ pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, String>, &'stat
 
         let split: Vec<String> = key.split(":").map(|s| s.to_string()).collect();
 
-        let first = split.first().ok_or("Failed to get |split.first()|")?;
-        let last = split.last().ok_or("Failed to get |split.last()|")?;
+        let first = split
+            .first()
+            .with_context(|| "Failed to get split.first()")?;
+
+        let last = split.last().with_context(|| "Failed to get split.last()")?;
 
         key_map.insert(first.to_owned(), last.to_owned());
     }
@@ -141,17 +146,10 @@ pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, String>, &'stat
     return Ok(key_map);
 }
 
-pub fn hook_keyboard(settings: Settings) {
-    let keys = match build_keymap(settings.read_config::<Vec<String>>("keys")) {
-        Ok(map) => map,
+pub fn hook_keyboard(settings: Settings) -> Result<()> {
+    let keys = build_keymap(settings.read_config::<Vec<String>>("keys")?)?;
 
-        Err(error) => {
-            error::messagebox(error as &str);
-            error::shutdown(ExitStatus::Failure);
-        }
-    };
-
-    let reset = settings.read_config::<String>("reset");
+    let reset = settings.read_config::<String>("reset")?;
 
     let mut held_keys: Vec<String> = Vec::new();
 
@@ -171,12 +169,8 @@ pub fn hook_keyboard(settings: Settings) {
                         // send it to the clients
                         server::update_clients(format!("[0, \"{}\"]", mask));
 
-                        match held_keys.iter().position(|x| *x == key_str) {
-                            Some(index) => {
-                                held_keys.remove(index);
-                            }
-
-                            None => {}
+                        if let Some(index) = held_keys.iter().position(|x| *x == key_str) {
+                            held_keys.remove(index);
                         }
                     }
                 }
@@ -204,7 +198,8 @@ pub fn hook_keyboard(settings: Settings) {
     };
 
     if let Err(error) = rdev::listen(callback) {
-        error::handle_error("Error while listening to keyboard input", error);
-        error::shutdown(ExitStatus::Failure);
+        anyhow::bail!("Error while listening to keyboard input: {:?}", error);
     }
+
+    Ok(())
 }
