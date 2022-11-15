@@ -26,6 +26,9 @@ function handleKeyPress(data) {
         throw "Attempted to call `handleKeyPress` where `data` was not typeof string";
     }
 
+    if (data === "reset") // cant parse reset data
+        return;
+
     let pair = JSON.parse(data);
 
     down = pair[0] == 1;

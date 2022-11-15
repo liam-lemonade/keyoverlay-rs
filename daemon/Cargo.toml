@@ -1,5 +1,5 @@
 [package]
-name = "keyoverlay_daemon"
+name = "keyoverlay-rs"
 version = "0.2.1"
 edition = "2021"
 
