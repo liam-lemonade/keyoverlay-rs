@@ -30,3 +30,4 @@ windres = "*"
 
 [features]
 console = []
+debug = []
