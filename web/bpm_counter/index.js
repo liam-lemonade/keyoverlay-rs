@@ -1,10 +1,6 @@
 class Settings {
     static port = 7686; // check the settings.json file for this
-    static odometerAnimation = true; // should there be a keypress counter
-    static odometerAnimationSpeed = "100ms"; // how fast should the animation for the counter play. set to 0 to disable animation
-
-    static showHistory = true;
-    static historyPixelsPerSecond = 1000;
+    static timeWindowMs = 1000;
 }
 
 let socket = new ReconnectingWebSocket("ws://127.0.0.1:" + Settings.port);
@@ -46,24 +42,29 @@ let animation = new CountUp('bpm', 0, 0, 0, .5, {
     decimal: "."
 });
 
-let hasStarted = false;
-let timeStarted = -1;
-let presses = 0;
+let timestamps = []
 
 function onKeyDown(text) {
-    presses++;
+    timestamps.push(Date.now());
 }
 
+let lastBpm = 0; // it starts at 0 anyway so no issues here
+
 setInterval(function () {
-    let timeElapsed = Date.now() - timeStarted;
+    timestamps.forEach(function (value, index) {
+        let delta = Date.now() - value
 
-    if (timeElapsed > 500) {
-        let bpm = Math.ceil(((presses / (timeElapsed / 1000)) / 4) * 60)
-        animation.update(bpm);
-        //odometer.update(bpm);
+        if (delta > Settings.timeWindowMs) {
+            timestamps.splice(index, 1);
+        }
+    });
 
-        timeStarted = Date.now();
-        presses = 0;
+    // calculate average
+    let bpm = Math.ceil(((timestamps.length / (Settings.timeWindowMs / 1000)) / 4) * 60)
+
+    if (lastBpm != bpm) {
+        animation.update(bpm); // countUp.js does not enjoy being spammed
+        lastBpm = bpm;
     }
 }, 10)
 
