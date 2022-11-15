@@ -21,6 +21,7 @@ tray-item = "0.7.1"
 open = "3.0.3"
 
 lazy_static = "1.4.0"
+anyhow = "1.0.66"
 
 simple-websockets = "0.1.4"
 serde_json = "1.0.87"

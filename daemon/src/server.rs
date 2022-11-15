@@ -1,5 +1,6 @@
 extern crate actix_files;
 extern crate actix_web;
+extern crate anyhow;
 
 use std::{
     collections::HashMap,
@@ -10,10 +11,14 @@ use std::{
 use actix_files as fs;
 use actix_web::{middleware::TrailingSlash, App, HttpServer};
 use actix_web_lab::middleware::NormalizePath;
+use anyhow::Result;
 use lazy_static::lazy_static;
 use simple_websockets::{Event, Message, Responder};
 
-use crate::{error, settings::Settings};
+use crate::{
+    error::{self, ExitStatus},
+    settings::Settings,
+};
 
 //const WEBFILE_PATH: &str = r"D:\code\projects\keyoverlay\web";
 
@@ -42,7 +47,17 @@ pub fn update_clients(buffer: String) {
 
 #[actix_web::main]
 pub async fn spawn_webserver(settings: Settings) -> std::io::Result<()> {
-    let address = ("127.0.0.1", settings.read_config::<u16>("web_port")); // the address is a tuple
+    let port = settings
+        .read_config::<u16>("web_port")
+        .unwrap_or_else(|error| {
+            error::handle_error(
+                "An error occurred while attempting to read from the config",
+                error,
+            );
+            error::shutdown(ExitStatus::Failure);
+        });
+
+    let address = ("127.0.0.1", port);
 
     let wrapper = NormalizePath::new(TrailingSlash::Always).use_redirects();
 
@@ -59,17 +74,13 @@ pub async fn spawn_webserver(settings: Settings) -> std::io::Result<()> {
     .run();
 
     let (ip, port) = address;
-    match open::that(format!("http://{}:{}", ip, port)) {
-        Ok(_) => {}
-
-        Err(error) => error::handle_error("Failed to open overlay in browser!", error),
-    }
+    open::that(format!("http://{}:{}", ip, port))?;
 
     server.await
 }
 
-pub fn spawn_socket_server(settings: Settings) {
-    let port = settings.read_config::<u16>("socket_port");
+pub fn spawn_socket_server(settings: Settings) -> Result<()> {
+    let port = settings.read_config::<u16>("socket_port")?;
 
     match simple_websockets::launch(port) {
         Ok(socket) => {
@@ -98,6 +109,6 @@ pub fn spawn_socket_server(settings: Settings) {
             }
         }
 
-        Err(error) => error::handle_error("Failed to create websocket server!", error),
+        Err(error) => anyhow::bail!("Failed to create websocket hub: {:?}", error),
     }
 }

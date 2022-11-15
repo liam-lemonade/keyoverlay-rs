@@ -12,17 +12,13 @@ pub fn shutdown(code: ExitStatus) -> ! {
 }
 
 pub fn messagebox(text: &str) {
-    msgbox::create("KeyOverlay Daemon", text, msgbox::IconType::Info)
+    msgbox::create("keyoverlay-rs", text, msgbox::IconType::Info)
         .expect("Failed to create messagebox!");
 }
 
 pub fn handle_error<T: Debug>(text: &str, error: T) {
     let message = format!("{}\n\n{:?}", text, error);
 
-    msgbox::create(
-        "KeyOverlay Daemon",
-        format!("An error occurred!\n{}", message).as_str(),
-        msgbox::IconType::Error,
-    )
-    .expect("Failed to create messagebox!");
+    msgbox::create("keyoverlay-rs", message.as_str(), msgbox::IconType::Error)
+        .expect("Failed to create messagebox!");
 }
