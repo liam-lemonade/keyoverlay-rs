@@ -22,6 +22,7 @@ fn main() -> anyhow::Result<()> {
             "An error occured while attempting to get the configuration",
             error,
         );
+
         error::shutdown(ExitStatus::Failure);
     });
 
@@ -53,7 +54,7 @@ fn main() -> anyhow::Result<()> {
     });
 
     if let Err(error) = server::spawn_webserver(settings) {
-        error::handle_error("HttpServer did not exit gracefully.", error);
+        error::handle_error("An error occured while running the webserer thread", error);
         error::shutdown(ExitStatus::Failure);
     }
 

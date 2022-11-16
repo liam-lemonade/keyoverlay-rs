@@ -18,12 +18,16 @@ enum TrayMessage {
 }
 
 fn send_traymessage(sender: &Sender<TrayMessage>, msg: TrayMessage) {
-    if let Err(error) = sender.send(msg) {
+    let result = sender
+        .send(msg.clone())
+        .with_context(|| format!("Failed to send TrayMessage {:?} across mpsc::channel", msg));
+
+    if result.is_err() {
         // tray-item has forced my hand. i cant use a future, option, result, etc
         // on the bright side, this error is unrecoverable anyway
         error::handle_error(
-            "An error occured while sending TrayMessage across mpsc::channel",
-            error,
+            "An error occured while running the tray thread",
+            result.err(),
         );
 
         error::shutdown(ExitStatus::Failure);
@@ -53,11 +57,15 @@ pub fn handle_tray(settings: Settings) -> Result<()> {
     );
 
     loop {
-        let event = rx.recv()?; // big issue if this doesnt recieve, the channel has closed
+        // big issue if this doesnt recieve, the channel has closed
+        let event = rx
+            .recv()
+            .with_context(|| "Failed to recieve mpsc::channel event")?;
 
         match event {
             TrayMessage::Open => {
-                open::that(&address)?;
+                open::that(&address)
+                    .with_context(|| format!("Failed to open {} in browser", &address))?;
             }
 
             TrayMessage::Quit => error::shutdown(ExitStatus::Success),
