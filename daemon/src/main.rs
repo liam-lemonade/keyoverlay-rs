@@ -14,6 +14,8 @@ pub mod error;
 pub mod keyboard;
 pub mod server;
 pub mod settings;
+
+#[cfg(windows)]
 pub mod tray;
 
 fn main() -> anyhow::Result<()> {
@@ -26,13 +28,16 @@ fn main() -> anyhow::Result<()> {
         error::shutdown(ExitStatus::Failure);
     });
 
-    let tray_settings = settings.clone();
-    thread::spawn(move || {
-        if let Err(error) = tray::handle_tray(tray_settings) {
-            error::handle_error("An error occured while running the tray thread", error);
-            error::shutdown(ExitStatus::Failure);
-        }
-    });
+    if cfg!(windows) {
+        // TODO: fix tray compatability with other platforms
+        let tray_settings = settings.clone();
+        thread::spawn(move || {
+            if let Err(error) = tray::handle_tray(tray_settings) {
+                error::handle_error("An error occured while running the tray thread", error);
+                error::shutdown(ExitStatus::Failure);
+            }
+        });
+    }
 
     let socket_server_settings = settings.clone();
     thread::spawn(move || {

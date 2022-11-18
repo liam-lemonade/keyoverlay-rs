@@ -43,21 +43,6 @@ fn create_tray() -> Result<TrayItem> {
             tray.set_icon("keyoverlay-icon-windows")?;
         }
 
-        "linux" => {
-            // do something
-            // do smth else
-            gtk::init()?;
-
-            tray.set_icon("keyoverlay-icon-linux")?;
-
-            gtk::main();
-        }
-
-        "macos" => {
-            // do smth
-            tray.set_icon("keyoverlay-icon-macos")?;
-        }
-
         _ => anyhow::bail!("Failed to set icon, unknown operating-system"),
     };
 

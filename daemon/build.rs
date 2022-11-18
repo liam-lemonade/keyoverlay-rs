@@ -1,5 +1,7 @@
 use windres::Build;
 
 fn main() {
-    Build::new().compile("tray-build.rc").unwrap();
+    if cfg!(windows) {
+        Build::new().compile("tray-build.rc").unwrap();
+    }
 }
