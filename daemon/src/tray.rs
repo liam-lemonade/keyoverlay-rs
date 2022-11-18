@@ -1,10 +1,16 @@
 extern crate anyhow;
 extern crate tray_item;
 
+#[cfg(target_os = "windows")] // EDIT THIS LATER
+extern crate libappindicator;
+
 use std::sync::mpsc::{self, Sender};
 
 use anyhow::{Context, Result};
 use tray_item::TrayItem;
+
+#[cfg(target_os = "windows")] // EDIT THIS LATER
+use libappindicator::gtk;
 
 use crate::{
     error::{self, ExitStatus},
@@ -30,9 +36,35 @@ fn send_traymessage(sender: &Sender<TrayMessage>, msg: TrayMessage) {
     }
 }
 
+fn create_tray() -> Result<TrayItem> {
+    let mut tray =
+        TrayItem::new("keyoverlay-rs", "").with_context(|| "Failed to create tray item")?;
+
+    match std::env::consts::OS {
+        "windows" => {
+            tray.set_icon("keyoverlay-icon-windows")?;
+        }
+
+        "linux" => {
+            // do something
+            // do smth else
+            gtk::init()?;
+            tray.set_icon("keyoverlay-icon-linux")?;
+        }
+
+        "macos" => {
+            // do smth
+            tray.set_icon("keyoverlay-icon-macos")?;
+        }
+
+        _ => anyhow::bail!("Failed to set icon, unknown operating-system"),
+    };
+
+    Ok(tray)
+}
+
 pub fn handle_tray(settings: Settings) -> Result<()> {
-    let mut tray = TrayItem::new("keyoverlay-rs", "keyoverlay-icon")
-        .with_context(|| "Failed to create TrayItem")?;
+    let mut tray = create_tray()?;
 
     let (tx, rx) = mpsc::channel();
 
