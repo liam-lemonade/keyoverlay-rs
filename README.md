@@ -19,4 +19,11 @@ Due to the nature of rust, the only requirements needed are the [Visual C++ Redi
 # How can I help?
 Contributions are always appreciated! This is my first full-scale rust application, so there is certain to be many opportunities for improvements.
 
-Please create a [issue](https://github.com/TheRacc2/keyoverlay-rs/issues) to discuss ideas or needed changes, and a [pull request](https://github.com/TheRacc2/keyoverlay-rs/pulls) for implemented changes.
+The  [issue](https://github.com/TheRacc2/keyoverlay-rs/issues) board is the best place to reach me.
+
+### What tags to use?
+For ideas, use [enhancement](https://github.com/TheRacc2/keyoverlay-rs/labels/enhancement) so your idea gets seen by the right person.
+
+For bugs, use the built-in [bug](https://github.com/TheRacc2/keyoverlay-rs/labels/bug) tag so I know there's been an issue.
+
+For any questions or proposals for new front-end presets, please use the [presets](https://github.com/TheRacc2/keyoverlay-rs/labels/presets) tag.

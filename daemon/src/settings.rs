@@ -40,11 +40,11 @@ impl Settings {
         if Path::new(name).exists() {
             let builder = Config::builder().add_source(config::File::with_name(name));
 
-            let message = "Failed to get config! Deleting the file (settings.json) and re-opening the program may fix this issue.";
+            let message = "Failed to get config! Deleting the file (settings.json) and re-opening the program may fix this issue";
             builder.build().with_context(|| message)
         } else {
             // create config as it doesnt exist
-            let message = "The configuration file could not be found. A default configuration (settings.json) will be created.\n\nPlease read the github wiki (https://github.com/TheRacc2/keyoverlay-rs/wiki) to see configuration guides.";
+            let message = "The configuration file could not be found. A default configuration (settings.json) will be created.\n\nPlease read the github wiki (https://github.com/TheRacc2/keyoverlay-rs/wiki) to see configuration guides";
             error::messagebox(message);
 
             Self::create_default_config(name)

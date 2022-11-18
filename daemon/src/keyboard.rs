@@ -16,7 +16,7 @@ pub fn key_as_str(key: Key) -> &'static str {
         Key::CapsLock => "CapsLock",
         Key::ControlLeft => "ControlLeft",
         Key::ControlRight => "ControlRight",
-        Key::Delete => "Delte",
+        Key::Delete => "Delete",
         Key::DownArrow => "ArrowDown",
         Key::End => "End",
         Key::Escape => "Escape",
@@ -113,7 +113,7 @@ pub fn key_as_str(key: Key) -> &'static str {
         Key::Kp7 => "7",
         Key::Kp8 => "8",
         Key::Kp9 => "9",
-        Key::KpDelete => "Delte",
+        Key::KpDelete => "Delete",
         Key::Function => "Function",
         Key::Unknown(_) => "Unknown",
     }
@@ -128,7 +128,7 @@ pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, String>> {
 
     for key in keys {
         if !key.contains(":") {
-            key_map.insert(key.clone(), key);
+            key_map.insert(key.clone().to_lowercase(), key);
             continue;
         }
 
@@ -140,7 +140,7 @@ pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, String>> {
 
         let last = split.last().with_context(|| "Failed to get split.last()")?;
 
-        key_map.insert(first.to_owned(), last.to_owned());
+        key_map.insert(first.to_owned().to_lowercase(), last.to_owned());
     }
 
     return Ok(key_map);
@@ -149,14 +149,14 @@ pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, String>> {
 pub fn hook_keyboard(settings: Settings) -> Result<()> {
     let keys = build_keymap(settings.read_config::<Vec<String>>("keys")?)?;
 
-    let reset = settings.read_config::<String>("reset")?;
+    let reset = settings.read_config::<String>("reset")?.to_lowercase();
 
     let mut held_keys: Vec<String> = Vec::new();
 
     let callback = move |event: Event| {
         match event.event_type {
             EventType::KeyRelease(key) => {
-                let key_str = key_to_string(key);
+                let key_str = key_to_string(key).to_lowercase();
 
                 if key_str == reset {
                     server::update_clients("reset".to_string());
@@ -177,7 +177,7 @@ pub fn hook_keyboard(settings: Settings) -> Result<()> {
             }
 
             EventType::KeyPress(key) => {
-                let key_str = key_to_string(key);
+                let key_str = key_to_string(key).to_lowercase();
 
                 if held_keys.contains(&key_str) {
                     return;

@@ -11,7 +11,7 @@ use std::{
 use actix_files as fs;
 use actix_web::{middleware::TrailingSlash, App, HttpServer};
 use actix_web_lab::middleware::NormalizePath;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use lazy_static::lazy_static;
 use simple_websockets::{Event, Message, Responder};
 
@@ -50,10 +50,7 @@ pub async fn spawn_webserver(settings: Settings) -> std::io::Result<()> {
     let port = settings
         .read_config::<u16>("web_port")
         .unwrap_or_else(|error| {
-            error::handle_error(
-                "An error occurred while attempting to read from the config",
-                error,
-            );
+            error::handle_error("An error occured while running the webserver thread", error);
             error::shutdown(ExitStatus::Failure);
         });
 
@@ -73,8 +70,13 @@ pub async fn spawn_webserver(settings: Settings) -> std::io::Result<()> {
     .bind(address)?
     .run();
 
-    let (ip, port) = address;
-    open::that(format!("http://{}:{}", ip, port))?;
+    let formatted = format!("http://{}:{}", address.0, port);
+    open::that(&formatted)
+        .with_context(|| format!("Failed to open {} in browser", &formatted))
+        .unwrap_or_else(|error| {
+            error::handle_error("An error occured while running the webserver thread", error);
+            error::shutdown(ExitStatus::Failure);
+        }); // actix has forced my hand with this one
 
     server.await
 }
