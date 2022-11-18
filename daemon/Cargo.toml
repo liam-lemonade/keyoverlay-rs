@@ -25,11 +25,8 @@ anyhow = "1.0.66"
 simple-websockets = "0.1.4"
 serde_json = "1.0.87"
 
-[target.'cfg(windows)'.dependencies]
-tray-item = "0.7.1"
-
-[target.'cfg(windows)'.build-dependencies]
-windres = "0.2.2"
+eframe = "0.19.0"
+egui = "0.19.0"
 
 [features]
 console = []

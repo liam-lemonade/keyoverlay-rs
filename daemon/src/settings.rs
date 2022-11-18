@@ -3,9 +3,9 @@ extern crate config;
 
 use config::Config;
 
-use std::fs::File;
 use std::io::Write;
 use std::path::Path;
+use std::{fs::File, io::Read};
 
 use crate::error;
 use anyhow::{Context, Result};
@@ -13,6 +13,7 @@ use anyhow::{Context, Result};
 #[derive(Debug, Clone)]
 pub struct Settings {
     config: Config,
+    name: String,
 }
 
 const DEFAULT_CONFIG: &[u8] = b"{
@@ -35,20 +36,31 @@ impl Settings {
         Self::try_get_config(name)
     }
 
+    pub fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
     fn try_get_config(name: &str) -> Result<Config> {
         // if the config file exists, load it
         if Path::new(name).exists() {
             let builder = Config::builder().add_source(config::File::with_name(name));
 
-            let message = "Failed to get config! Deleting the file (settings.json) and re-opening the program may fix this issue";
+            let message = format!("Failed to get config! Deleting the file ({name}) and re-opening the program may fix this issue");
             builder.build().with_context(|| message)
         } else {
             // create config as it doesnt exist
-            let message = "The configuration file could not be found. A default configuration (settings.json) will be created.\n\nPlease read the github wiki (https://github.com/TheRacc2/keyoverlay-rs/wiki) to see configuration guides";
-            error::messagebox(message);
+            let message = format!("The configuration file could not be found. A default configuration ({name}) will be created.\n\nPlease read the github wiki (https://github.com/TheRacc2/keyoverlay-rs/wiki) to see configuration guides");
+            error::messagebox(&message);
 
             Self::create_default_config(name)
         }
+    }
+
+    pub fn raw_json(&self) -> Result<String> {
+        let buffer = std::fs::read_to_string(self.name.as_str())
+            .with_context(|| "Failed to read config to string")?;
+
+        Ok(buffer)
     }
 
     // <'de, T: serde::Deserialize<'de>> forces the type in T to be deserializable, and because config-rs
@@ -56,8 +68,9 @@ impl Settings {
     pub fn read_config<'de, T: serde::Deserialize<'de>>(&self, key: &str) -> Result<T> {
         let err = self.config.get::<T>(key).with_context(||
             format!(
-                "Failed to read key \"{}\" from config. Deleting \"settings.json\" and re-opening the program may fix this issue",
-                key
+                "Failed to read key \"{}\" from config. Deleting the file ({}) and re-opening the program may fix this issue",
+                key,
+                self.name
             )
         );
 
@@ -67,6 +80,7 @@ impl Settings {
     pub fn new(name: &str) -> Result<Self> {
         Ok(Self {
             config: Self::try_get_config(name)?,
+            name: name.to_string(),
         })
     }
 }
