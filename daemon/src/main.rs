@@ -54,7 +54,7 @@ fn main() -> anyhow::Result<()> {
     });
 
     if let Err(error) = server::spawn_webserver(settings) {
-        error::handle_error("An error occured while running the webserer thread", error);
+        error::handle_error("An error occured while running the webserver thread", error);
         error::shutdown(ExitStatus::Failure);
     }
 

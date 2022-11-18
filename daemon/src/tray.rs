@@ -53,6 +53,7 @@ fn create_tray() -> Result<TrayItem> {
             // do something
             // do smth else
             gtk::init()?;
+
             tray.set_icon("keyoverlay-icon-linux")?;
         }
 
