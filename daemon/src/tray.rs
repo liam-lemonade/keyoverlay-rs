@@ -1,16 +1,10 @@
 extern crate anyhow;
 extern crate tray_item;
 
-#[cfg(target_os = "windows")] // EDIT THIS LATER
-extern crate libappindicator;
-
 use std::sync::mpsc::{self, Sender};
 
 use anyhow::{Context, Result};
 use tray_item::TrayItem;
-
-#[cfg(target_os = "windows")] // EDIT THIS LATER
-use libappindicator::gtk;
 
 use crate::{
     error::{self, ExitStatus},
@@ -55,6 +49,8 @@ fn create_tray() -> Result<TrayItem> {
             gtk::init()?;
 
             tray.set_icon("keyoverlay-icon-linux")?;
+
+            gtk::main();
         }
 
         "macos" => {
