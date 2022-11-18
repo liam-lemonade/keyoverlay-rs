@@ -6,6 +6,7 @@ use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
     thread,
+    path::PathBuf,
 };
 
 use actix_files as fs;
@@ -20,20 +21,10 @@ use crate::{
     settings::Settings,
 };
 
-//const WEBFILE_PATH: &str = r"D:\code\projects\keyoverlay\web";
-
-const WEBFILE_PATH: &str = if cfg!(feature = "debug") {
-    r"D:\code\projects\keyoverlay\web"
-} else {
-    r"web"
-};
-
 lazy_static! {
     static ref CLIENT_LIST: Arc<Mutex<HashMap<u64, Responder>>> =
         Arc::new(Mutex::new(HashMap::new()));
 }
-
-// const WEBFILE_PATH: &str = r"web"
 
 pub fn update_clients(buffer: String) {
     thread::spawn(move || {
@@ -58,10 +49,15 @@ pub async fn spawn_webserver(settings: Settings) -> std::io::Result<()> {
 
     let wrapper = NormalizePath::new(TrailingSlash::Always).use_redirects();
 
+    #[cfg(debug_assertions)]
+    let webfile_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../web");
+    #[cfg(not(debug_assertions))]
+    let webfile_path = PathBuf::from("web");
+
     let server = HttpServer::new(move || {
         App::new()
             .service(
-                fs::Files::new("/", WEBFILE_PATH)
+                fs::Files::new("/", webfile_path.clone())
                     .show_files_listing()
                     .index_file("index.html"),
             )
