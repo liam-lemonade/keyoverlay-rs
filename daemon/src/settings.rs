@@ -16,12 +16,9 @@ pub struct Settings {
     name: String,
 }
 
-const DEFAULT_CONFIG: &[u8] = b"{
-    \"web_port\": 7685,
-    \"socket_port\": 7686,
-    \"keys\": [ \"Z\", \"X\" ],
-    \"reset\": \"End\"
-}";
+pub fn make_config(web_port: u16, socket_port: u16, keys: String, reset: String) -> String {
+    format!("{{\n\t\"web_port\": {web_port},\n\t\"socket_port\": {socket_port},\n\t\"keys\": {keys},\n\t\"reset\": {reset}\n}}")
+}
 
 impl Settings {
     // writes to a file with DEFAULT_FILE const
@@ -30,8 +27,16 @@ impl Settings {
 
         let mut file = result.with_context(|| "Failed to create default configuration file")?;
 
-        file.write_all(DEFAULT_CONFIG)
-            .with_context(|| "Failed to write default configuration to file")?;
+        file.write_all(
+            make_config(
+                7685,
+                7686,
+                "[ \"Z\", \"X\" ]".to_string(),
+                "\"End\"".to_string(),
+            )
+            .as_bytes(),
+        )
+        .with_context(|| "Failed to write default configuration to file")?;
 
         Self::try_get_config(name)
     }

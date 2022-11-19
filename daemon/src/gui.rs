@@ -22,6 +22,7 @@ struct Gui {
     json: String,
     client_count: usize,
     key_list: Vec<String>,
+    reset: String,
     needs_restart: bool,
 
     receiver: Receiver<GuiEvent>,
@@ -41,11 +42,19 @@ impl Gui {
                 error::shutdown(ExitStatus::Failure);
             });
 
+        let reset = settings
+            .read_config::<String>("reset")
+            .unwrap_or_else(|error| {
+                error::handle_error("An error occured while running the gui thread", error);
+                error::shutdown(ExitStatus::Failure);
+            });
+
         Self {
             settings,
             json,
             client_count: 0,
             key_list: keys,
+            reset,
             needs_restart: false,
 
             receiver,
@@ -60,6 +69,25 @@ impl Gui {
                 self.client_count = count;
             }
         }
+    }
+}
+
+impl Gui {
+    fn build_json(&mut self) {
+        let mut key_json = "[ ".to_string();
+        for (i, key) in self.key_list.iter().enumerate() {
+            if i == self.key_list.len() - 1 {
+                key_json += &format!("\"{}\"", key);
+            } else {
+                key_json += &format!("\"{}\", ", key);
+            }
+        }
+        key_json += " ]";
+
+        let new_json =
+            crate::settings::make_config(7685, 7686, key_json, format!("\"{}\"", self.reset));
+
+        self.json = new_json;
     }
 }
 
@@ -79,17 +107,29 @@ impl eframe::App for Gui {
                     .max_height(270_f32)
                     .show(&mut columns[0], |ui| {
                         ui.collapsing("Keybinds", |ui| {
+                            let mut does_need_rebuild = false;
+
                             self.key_list.retain_mut(|key| {
                                 let mut return_value = true;
 
                                 ui.horizontal(|ui| {
-                                    ui.add_sized(
+                                    let response = ui.add_sized(
                                         vec2(20_f32, 20_f32),
                                         egui::TextEdit::singleline(key).hint_text("..."),
                                     );
+
+                                    if response.changed() {
+                                        does_need_rebuild = true;
+                                    }
+
                                     //ui.text_edit_singleline(key);
 
-                                    return_value = !ui.button("-").clicked();
+                                    if ui.button("-").clicked() {
+                                        does_need_rebuild = true;
+                                        return_value = false;
+                                    } else {
+                                        return_value = true;
+                                    }
                                 });
 
                                 return_value
@@ -97,6 +137,26 @@ impl eframe::App for Gui {
 
                             if ui.button("+").clicked() {
                                 self.key_list.push(String::new());
+                                does_need_rebuild = true;
+                            }
+
+                            ui.add_space(10_f32);
+
+                            ui.horizontal(|ui| {
+                                ui.label("Reset:");
+
+                                let response = ui.add_sized(
+                                    vec2(20_f32, 20_f32),
+                                    egui::TextEdit::singleline(&mut self.reset).hint_text("..."),
+                                );
+
+                                if response.changed() {
+                                    does_need_rebuild = true;
+                                }
+                            });
+
+                            if does_need_rebuild {
+                                self.build_json();
                             }
                         });
                     });
@@ -117,8 +177,20 @@ impl eframe::App for Gui {
                 });
 
                 // right side
-                columns[1].collapsing(self.settings.get_name(), |collapsing| {
-                    collapsing.code_editor(&mut self.json);
+                columns[1].push_id(1, |ui| {
+                    egui::ScrollArea::vertical()
+                        .max_height(310_f32)
+                        .show(ui, |ui| {
+                            ui.collapsing("Current Configuration", |collapsing| {
+                                collapsing.code_editor(&mut self.json);
+                            });
+
+                            ui.collapsing(self.settings.get_name(), |collapsing| {
+                                if let Ok(mut some) = self.settings.raw_json() {
+                                    collapsing.code_editor(&mut some).surrender_focus();
+                                }
+                            });
+                        });
                 });
 
                 columns[1].with_layout(egui::Layout::bottom_up(egui::Align::RIGHT), |ui| {
