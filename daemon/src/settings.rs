@@ -3,9 +3,9 @@ extern crate config;
 
 use config::Config;
 
+use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use std::{fs::File, io::Read};
 
 use crate::error;
 use anyhow::{Context, Result};

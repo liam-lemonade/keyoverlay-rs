@@ -5,10 +5,14 @@
 
 extern crate anyhow;
 
+use gui::GuiEvent;
 use settings::Settings;
 
 use error::ExitStatus;
-use std::{sync::mpsc, thread};
+use std::{
+    sync::mpsc::{self, Receiver, Sender},
+    thread,
+};
 
 pub mod error;
 pub mod gui;
@@ -26,9 +30,14 @@ fn main() -> anyhow::Result<()> {
         error::shutdown(ExitStatus::Failure);
     });
 
+    let (sender, reciever): (Sender<GuiEvent>, Receiver<GuiEvent>) = mpsc::channel();
+
+    let socket_server_sender = sender.clone();
     let socket_server_settings = settings.clone();
     thread::spawn(move || {
-        if let Err(error) = server::spawn_socket_server(socket_server_settings) {
+        if let Err(error) =
+            server::spawn_socket_server(socket_server_settings, socket_server_sender)
+        {
             error::handle_error(
                 "An error occured while running the socket server thread",
                 error,
@@ -53,7 +62,7 @@ fn main() -> anyhow::Result<()> {
         }
     });
 
-    if let Err(error) = gui::start_gui(settings) {
+    if let Err(error) = gui::start_gui(settings, reciever) {
         error::handle_error("An error occured while running the gui thread", error);
         error::shutdown(ExitStatus::Failure);
     }
