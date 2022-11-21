@@ -9,7 +9,7 @@ use egui::vec2;
 
 use crate::{
     error::{self, ExitStatus},
-    settings::Settings,
+    settings::{self, Settings},
 };
 
 #[derive(Clone, Debug)]
@@ -21,6 +21,12 @@ struct Gui {
     settings: Settings,
     json: String,
     client_count: usize,
+
+    web_port: u16,
+    web_port_str: String,
+    socket_port: u16,
+    socket_port_str: String,
+
     key_list: Vec<String>,
     reset: String,
     needs_restart: bool,
@@ -30,30 +36,42 @@ struct Gui {
 
 impl Gui {
     fn new(settings: Settings, receiver: Receiver<GuiEvent>) -> Self {
-        let json = settings.raw_json().unwrap_or_else(|error| {
+        let unwrap_err = |error| -> ! {
             error::handle_error("An error occured while running the gui thread", error);
-            error::shutdown(ExitStatus::Failure);
-        });
+            error::shutdown(ExitStatus::Failure)
+        };
+
+        let json = settings
+            .raw_json()
+            .unwrap_or_else(|error| unwrap_err(error));
 
         let keys = settings
             .read_config::<Vec<String>>("keys")
-            .unwrap_or_else(|error| {
-                error::handle_error("An error occured while running the gui thread", error);
-                error::shutdown(ExitStatus::Failure);
-            });
+            .unwrap_or_else(|error| unwrap_err(error));
 
         let reset = settings
             .read_config::<String>("reset")
-            .unwrap_or_else(|error| {
-                error::handle_error("An error occured while running the gui thread", error);
-                error::shutdown(ExitStatus::Failure);
-            });
+            .unwrap_or_else(|error| unwrap_err(error));
+
+        let web_port = settings
+            .read_config::<u16>("web_port")
+            .unwrap_or_else(|error| unwrap_err(error));
+
+        let socket_port = settings
+            .read_config::<u16>("socket_port")
+            .unwrap_or_else(|error| unwrap_err(error));
 
         Self {
             settings,
             json,
             client_count: 0,
             key_list: keys,
+
+            web_port,
+            web_port_str: web_port.to_string(),
+            socket_port,
+            socket_port_str: socket_port.to_string(),
+
             reset,
             needs_restart: false,
 
@@ -84,8 +102,12 @@ impl Gui {
         }
         key_json += " ]";
 
-        let new_json =
-            crate::settings::make_config(7685, 7686, key_json, format!("\"{}\"", self.reset));
+        let new_json = settings::make_config(
+            self.web_port,
+            self.socket_port,
+            key_json,
+            format!("\"{}\"", self.reset),
+        );
 
         self.json = new_json;
     }
@@ -102,6 +124,52 @@ impl eframe::App for Gui {
                 // left side
                 columns[0].label("keyoverlay-rs configurator");
                 columns[0].separator();
+
+                columns[0].collapsing("Ports", |collapsing| {
+                    let mut does_need_rebuild = false;
+
+                    collapsing.horizontal(|ui| {
+                        ui.label("Web Port:");
+
+                        let response = ui.add_sized(
+                            vec2(40_f32, 20_f32),
+                            egui::TextEdit::singleline(&mut self.web_port_str).hint_text("..."),
+                        );
+
+                        if response.lost_focus() {
+                            self.web_port = self
+                                .web_port_str
+                                .parse::<u16>()
+                                .unwrap_or_else(|_| self.web_port);
+
+                            self.web_port_str = self.web_port.to_string();
+                            does_need_rebuild = true;
+                        }
+                    });
+
+                    collapsing.horizontal(|ui| {
+                        ui.label("Socket Port:");
+
+                        let response = ui.add_sized(
+                            vec2(40_f32, 20_f32),
+                            egui::TextEdit::singleline(&mut self.socket_port_str).hint_text("..."),
+                        );
+
+                        if response.lost_focus() {
+                            self.socket_port = self
+                                .socket_port_str
+                                .parse::<u16>()
+                                .unwrap_or_else(|_| self.socket_port);
+
+                            self.socket_port_str = self.socket_port.to_string();
+                            does_need_rebuild = true;
+                        }
+                    });
+
+                    if does_need_rebuild {
+                        self.build_json();
+                    }
+                });
 
                 egui::ScrollArea::vertical()
                     .max_height(270_f32)
@@ -162,16 +230,32 @@ impl eframe::App for Gui {
                     });
 
                 columns[0].with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                    if ui.button("Save Configuration").clicked() {
-                        // save config file
+                    ui.push_id(57384, |ui| {
                         if let Ok(old_json) = self.settings.raw_json() {
-                            if self.json != old_json {
-                                // replace the file
+                            ui.set_enabled(old_json != self.json);
+                        } else {
+                            ui.set_enabled(true); // if there is an error with the config, allow overwriting
+                        }
 
-                                self.needs_restart = true;
+                        if ui.button("Save Configuration").clicked() {
+                            // save config file
+                            if let Ok(old_json) = self.settings.raw_json() {
+                                if self.json != old_json {
+                                    // replace the file
+                                    if let Err(error) = self.settings.replace(&self.json) {
+                                        error::handle_error(
+                                            "An error occured while running the gui thread",
+                                            error,
+                                        );
+
+                                        error::shutdown(ExitStatus::Failure)
+                                    }
+
+                                    self.needs_restart = true;
+                                }
                             }
                         }
-                    }
+                    });
 
                     ui.label(format!("Connected clients: {:?}", self.client_count));
                 });

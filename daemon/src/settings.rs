@@ -3,7 +3,7 @@ extern crate config;
 
 use config::Config;
 
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::path::Path;
 
@@ -39,6 +39,14 @@ impl Settings {
         .with_context(|| "Failed to write default configuration to file")?;
 
         Self::try_get_config(name)
+    }
+
+    pub fn replace(&self, json: &String) -> Result<()> {
+        let mut stream = OpenOptions::new().write(true).open(&self.name)?;
+        stream.write_all(json.as_bytes())?;
+        stream.flush()?;
+
+        Ok(())
     }
 
     pub fn get_name(&self) -> String {
