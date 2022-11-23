@@ -4,7 +4,7 @@ extern crate anyhow;
 
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex},
+    sync::{mpsc::Sender, Arc, Mutex},
     thread,
 };
 
@@ -17,6 +17,7 @@ use simple_websockets::{Event, Message, Responder};
 
 use crate::{
     error::{self, ExitStatus},
+    gui::GuiEvent,
     settings::Settings,
 };
 
@@ -81,7 +82,7 @@ pub async fn spawn_webserver(settings: Settings) -> std::io::Result<()> {
     server.await
 }
 
-pub fn spawn_socket_server(settings: Settings) -> Result<()> {
+pub fn spawn_socket_server(settings: Settings, sender: Sender<GuiEvent>) -> Result<()> {
     let port = settings.read_config::<u16>("socket_port")?;
 
     match simple_websockets::launch(port) {
@@ -95,12 +96,16 @@ pub fn spawn_socket_server(settings: Settings) -> Result<()> {
                 match socket.poll_event() {
                     Event::Connect(client_id, responder) => {
                         println!("Client #{} connected.", client_id);
+
                         clients.insert(client_id, responder);
+                        sender.send(GuiEvent::ConnectionsUpdate(clients.len()))?;
                     }
 
                     Event::Disconnect(client_id) => {
                         println!("Client #{} disconnected.", client_id);
+
                         clients.remove(&client_id);
+                        sender.send(GuiEvent::ConnectionsUpdate(clients.len()))?;
                     }
 
                     _ => (),
