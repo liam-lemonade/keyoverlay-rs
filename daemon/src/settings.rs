@@ -42,7 +42,11 @@ impl Settings {
     }
 
     pub fn replace(&self, json: &String) -> Result<()> {
-        let mut stream = OpenOptions::new().write(true).open(&self.name)?;
+        let mut stream = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&self.name)?;
+
         stream.write_all(json.as_bytes())?;
         stream.flush()?;
 

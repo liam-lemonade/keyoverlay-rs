@@ -123,12 +123,12 @@ pub fn key_to_string(key: Key) -> String {
     return key_as_str(key).to_string();
 }
 
-pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, String>> {
-    let mut key_map = HashMap::<String, String>::with_capacity(keys.len());
+pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, (String, usize)>> {
+    let mut key_map = HashMap::<String, (String, usize)>::with_capacity(keys.len());
 
-    for key in keys {
+    for (i, key) in keys.iter().enumerate() {
         if !key.contains(":") {
-            key_map.insert(key.clone().to_lowercase(), key);
+            key_map.insert(key.clone().to_lowercase(), (key.to_owned(), i));
             continue;
         }
 
@@ -140,7 +140,7 @@ pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, String>> {
 
         let last = split.last().with_context(|| "Failed to get split.last()")?;
 
-        key_map.insert(first.to_owned().to_lowercase(), last.to_owned());
+        key_map.insert(first.to_owned().to_lowercase(), (last.to_owned(), i));
     }
 
     return Ok(key_map);
@@ -163,15 +163,15 @@ pub fn hook_keyboard(settings: Settings) -> Result<()> {
                     return;
                 }
 
-                if keys.contains_key(&key_str) {
-                    if let Some(mask) = keys.get(&key_str) {
-                        // key_str is the monitored key, mask is the value to send
-                        // send it to the clients
-                        server::update_clients(format!("[0, \"{}\"]", mask));
+                if let Some(pair) = keys.get(&key_str) {
+                    let (mask, index) = pair;
 
-                        if let Some(index) = held_keys.iter().position(|x| *x == key_str) {
-                            held_keys.remove(index);
-                        }
+                    // key_str is the monitored key, mask is the value to send
+                    // send it to the clients
+                    server::update_clients(format!("[\"{}\", false, {}]", mask, index));
+
+                    if let Some(index) = held_keys.iter().position(|x| *x == key_str) {
+                        held_keys.remove(index);
                     }
                 }
             }
@@ -183,13 +183,13 @@ pub fn hook_keyboard(settings: Settings) -> Result<()> {
                     return;
                 }
 
-                if keys.contains_key(&key_str) {
-                    if let Some(mask) = keys.get(&key_str) {
-                        // key_str is the monitored key, mask is the value to send
-                        // send it to the clients
-                        server::update_clients(format!("[1, \"{}\"]", mask));
-                        held_keys.push(key_str);
-                    }
+                if let Some(pair) = keys.get(&key_str) {
+                    let (mask, index) = pair;
+
+                    // key_str is the monitored key, mask is the value to send
+                    // send it to the clients
+                    server::update_clients(format!("[\"{}\", true, {}]", mask, index));
+                    held_keys.push(key_str);
                 }
             }
 

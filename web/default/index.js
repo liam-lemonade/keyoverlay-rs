@@ -26,28 +26,47 @@ socket.onmessage = event => {
 }
 
 class KeyHistory {
-    div = null;
-    pressed = false;
+    div;
+    pressed;
 
-    start = 0;
-    end = 0;
+    start;
+    end;
+
+    constructor() {
+        this.div = null;
+        this.pressed = true;
+
+        this.start = 0;
+        this.end = 0;
+    }
 }
 
 class Key {
-    text = "";
-    counter = 0;
+    text;
+    index;
+    counter;
 
-    div = null;
-    keytext = null;
-    odometer = null;
+    div;
+    keytext;
+    odometer;
 
-    history = [];
+    history;
 
-    canAddNextHistory = true;
+    constructor(text, index) {
+        this.text = text;
+        this.index = index;
+        this.counter = 0;
+
+        this.div = null;
+        this.keytext = null;
+        this.odometer = null;
+
+        this.history = [];
+    }
 }
 
 // the list of keys that have been pressed so far
-let keysList = [];
+let keyList = [];
 
 function handleKeyPress(data) {
     if (typeof data !== 'string') {
@@ -55,73 +74,48 @@ function handleKeyPress(data) {
     }
 
     if (data == "reset") {
-        keysList.forEach(key => {
+        keyList.forEach(key => {
             key.counter = 0;
-            key.odometer.update(key.counter);
+
+            if (key.odometer !== null) {
+                key.odometer.update(key.counter);
+            }
         })
 
         return;
     }
 
-    let pair = JSON.parse(data);
+    let json = JSON.parse(data);
 
-    down = pair[0] == 1;
+    let key = json[0];
+    let down = json[1];
 
     if (down) {
-        onKeyDown(pair[1]);
+        onKeyDown(key, json[2]); // json[2] == index
     }
     else {
-        onKeyUp(pair[1]);
+        onKeyUp(key);
     }
 }
 
-function addKeyFromString(text) {
+function onKeyDown(text, index) {
     if (typeof text !== 'string') {
-        throw "Attempted to call `addKeyFromString` where `text` was not typeof string"
+        throw "Attempted to call `onKeyDown` where `text` was not typeof `string`";
     }
 
-    let added = new Key();
-    added.text = text;
-
-    addNewKeyHTML(added);
-    keysList.push(added);
-
-    return added;
-}
-
-function findKey(text) {
-    if (typeof text !== 'string') {
-        throw "Attempted to call `findKey` where `text` was not typeof string"
+    if (typeof index !== 'number') {
+        throw "Attempted to call `addKeyFromString` where `index` was not typeof `number`"
     }
 
-    // has this key been pressed before?
-    let found = null;
-    keysList.every(key => {
-        if (key.text === text) {
-            found = key;
-            return false; // array.every breaks on false
-        }
-
-        return true; // array.every must have a return false statement
-    });
-
-    return found;
-}
-
-function onKeyDown(text) {
     let key = findKey(text);
 
     if (key === null) {
         console.log("Adding key: " + text);
-        key = addKeyFromString(text);
-    }
-
-    if (!(key instanceof Key)) {
-        throw "Attempted to call `onKeyDown` where `key` was not instanceof `Key`";
+        key = addKeyFromString(text, index);
     }
 
     // update odometer
-    if (Settings.odometerAnimation) {
+    if (Settings.odometerAnimation && key.odometer !== null) {
         key.odometer.update(++key.counter);
     }
 
@@ -132,52 +126,20 @@ function onKeyDown(text) {
 }
 
 function onKeyUp(text) {
+    if (typeof text !== 'string') {
+        throw "Attempted to call `onKeyDown` where `text` was not typeof `string`";
+    }
+
     let key = findKey(text);
 
     if (key === null) {
         return;
     }
 
-    if (!(key instanceof Key)) {
-        throw "Attempted to call `onKeyUp` where `key` was not instanceof `Key`";
-    }
-
     handleKeyHistory(key, false);
 
     // un-set background alpha
     key.div.style = "background-color: transparent; transition: background-color var(--fill-animation-speed) linear;"
-}
-
-function addNewKeyHTML(keypress) {
-    if (!(keypress instanceof Key)) {
-        throw "Attempted to call `addNewKeyHTML` where `keypress` was not instanceof `Key`";
-    }
-
-    // create parent div
-    keypress.div = document.createElement("div");
-    keypress.div.className = "keybox";
-
-    document.getElementById("keys").appendChild(keypress.div);
-
-    // create odometer
-    if (Settings.odometerAnimation) {
-        keypress.odometer = document.createElement("div");
-        keypress.odometer.className = "counter";
-        keypress.div.appendChild(keypress.odometer);
-
-        keypress.odometer = new Odometer({
-            el: keypress.odometer,
-            value: 0,
-        });
-    }
-
-    // fill text in `keybox-text`
-    keypress.keytext = document.createElement("div");
-    keypress.keytext.className = "keybox-text";
-
-    keypress.keytext.innerHTML = keypress.text;
-
-    keypress.div.appendChild(keypress.keytext);
 }
 
 function handleKeyHistory(key, down) {
@@ -190,34 +152,105 @@ function handleKeyHistory(key, down) {
     }
 
     if (down) {
-        if (key.canAddNextHistory) {
-            key.canAddNextHistory = false;
+        let history = new KeyHistory();
 
-            let history = new KeyHistory();
+        // add new history div with class #history
+        history.div = document.createElement("div");
+        history.div.className = "history";
+        history.div.style = "--length: 0px;"
 
-            // add new history div with class #history
-            history.div = document.createElement("div");
-            history.div.className = "history";
-            history.div.style = "--length: 0px;"
-            history.pressed = true;
-
-            key.div.appendChild(history.div);
-            key.history.push(history);
-        }
+        key.div.appendChild(history.div);
+        key.history.push(history);
     }
     else {
-        key.canAddNextHistory = true;
-
         let history = key.history[key.history.length - 1];
         history.pressed = false;
     }
-    /*
-    else {
-        let history = keypress.history[keypress.history.length - 1];
-        let length = history.div.style.getPropertyValue("--length");
-        history.style = "--length: " + length + "; animation: moveUp var(--history-time) linear forwards;";
+}
+
+function findKey(text) {
+    if (typeof text !== 'string') {
+        throw "Attempted to call `findKey` where `text` was not typeof string"
     }
-    */
+
+    // has this key been pressed before?
+    let found = null;
+    keyList.every(key => {
+        if (key.text === text) {
+            found = key;
+            return false; // array.every breaks on false
+        }
+
+        return true; // array.every must have a return false statement
+    });
+
+    return found;
+}
+
+function addKeyFromString(text, index) {
+    if (typeof text !== 'string') {
+        throw "Attempted to call `addKeyFromString` where `text` was not typeof string"
+    }
+
+    if (typeof index !== 'number') {
+        throw "Attempted to call `addKeyFromString` where `index` was not typeof `number`"
+    }
+
+    let added = new Key(text, index);
+
+    addNewKeyHTML(added);
+    keyList.push(added);
+
+    return added;
+}
+
+function addNewKeyHTML(key) {
+    if (!(key instanceof Key)) {
+        throw "Attempted to call `addNewKeyHTML` where `key` was not instanceof `Key`";
+    }
+
+    // create parent div
+    key.div = document.createElement("div");
+    key.div.className = "keybox";
+
+    let addAbove = null;
+    keyList.forEach(checking => {
+        if (checking.index > key.index) {
+            addAbove = checking;
+        }
+    });
+
+    if (addAbove === null) {
+        document.getElementById("keys").appendChild(key.div);
+    }
+    else {
+        //console.log(addAbove.div.className);
+        document.getElementById("keys").insertBefore(key.div, addAbove.div);
+    }
+
+    // create odometer
+    if (Settings.odometerAnimation) {
+        key.odometer = document.createElement("div");
+        key.odometer.className = "counter";
+        key.div.appendChild(key.odometer);
+
+        key.odometer = new Odometer({
+            el: key.odometer,
+            value: 0,
+        });
+    }
+
+    // fill text in `keybox-text`
+    key.keytext = document.createElement("div");
+    key.keytext.className = "keybox-text";
+
+    key.keytext.innerHTML = key.text;
+
+    key.div.appendChild(key.keytext);
+}
+
+function isVisible(element) {
+    return element.getBoundingClientRect().bottom > 0;
 }
 
 // main
@@ -228,8 +261,10 @@ setInterval(function () {
     let current = Date.now();
     let delta = (current - lastUpdate) / 1000;
 
-    keysList.forEach(key => {
-        key.history.forEach(history => {
+    keyList.forEach(key => {
+        for (var i = 0; i < key.history.length; i++) {
+            let history = key.history[i];
+
             history.start += Settings.historyPixelsPerSecond * delta;
 
             if (history.pressed) {
@@ -241,10 +276,16 @@ setInterval(function () {
 
             let height = history.start - history.end;
             history.div.style = "--length: " + height + "px; transform: translateY(-" + history.end + "px);";
-        });
+
+            if (!isVisible(history.div)) {
+                history.div.remove();
+                key.history.splice(i--, 1);
+            }
+        }
     });
 
     lastUpdate = current;
 }, 0);
+
 
 // https://www.w3schools.com/css/tryit.asp?filename=trycss3_gradient-linear_trans

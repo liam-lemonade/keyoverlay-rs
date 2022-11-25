@@ -21,22 +21,7 @@ socket.onmessage = event => {
     handleKeyPress(event.data);
 }
 
-function handleKeyPress(data) {
-    if (typeof data !== 'string') {
-        throw "Attempted to call `handleKeyPress` where `data` was not typeof string";
-    }
-
-    if (data === "reset") // cant parse reset data
-        return;
-
-    let pair = JSON.parse(data);
-
-    down = pair[0] == 1;
-
-    if (down) {
-        onKeyDown(pair[1]);
-    }
-}
+let lastBpm = 0; // it starts at 0 anyway so no issues here
 
 let animation = new CountUp('bpm', 0, 0, 0, .5, {
     useEasing: true,
@@ -47,11 +32,29 @@ let animation = new CountUp('bpm', 0, 0, 0, .5, {
 
 let timestamps = []
 
-function onKeyDown(text) {
-    timestamps.push(Date.now());
+function handleKeyPress(data) {
+    if (typeof data !== 'string') {
+        throw "Attempted to call `handleKeyPress` where `data` was not typeof string";
+    }
+
+    if (data === "reset") {
+        lastBpm = 0;
+        animation.update(0);
+        timestamps = [];
+
+        return;
+    }
+
+    let json = JSON.parse(data);
+
+    if (json[1]) { // true if down
+        onKeyDown();
+    }
 }
 
-let lastBpm = 0; // it starts at 0 anyway so no issues here
+function onKeyDown() {
+    timestamps.push(Date.now());
+}
 
 setInterval(function () {
     timestamps.forEach(function (value, index) {
