@@ -24,7 +24,7 @@ use crate::{
 //const WEBFILE_PATH: &str = r"D:\code\projects\keyoverlay\web";
 
 const WEBFILE_PATH: &str = if cfg!(feature = "debug") {
-    r"D:\code\projects\keyoverlay\web"
+    r"D:\code\projects\keyoverlay\web\keyoverlay-rs-presets"
 } else {
     r"web"
 };
