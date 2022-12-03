@@ -1,0 +1,3 @@
+[submodule "web/keyoverlay-rs-presets"]
+	path = web/keyoverlay-rs-presets
+	url = https://github.com/TheRacc2/keyoverlay-rs-presets
