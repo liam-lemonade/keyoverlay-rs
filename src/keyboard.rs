@@ -1,12 +1,18 @@
-extern crate anyhow;
+extern crate lazy_static;
+extern crate rdev;
 
-use anyhow::{Context, Result};
-use std::collections::HashMap;
-use std::vec::Vec;
+use std::{collections::HashMap, sync::RwLock};
 
-use crate::server;
-use crate::settings::Settings;
+use crate::{server, SETTINGS};
+use anyhow::Context;
+use lazy_static::lazy_static;
 use rdev::{Event, EventType, Key};
+
+lazy_static! {
+    static ref KEY_MAP: RwLock<HashMap<String, (String, usize)>> = RwLock::new(HashMap::new());
+    static ref RESET: RwLock<String> = RwLock::new(String::new());
+    static ref PRESSED_KEYS: RwLock<Vec<String>> = RwLock::new(Vec::new());
+}
 
 pub fn key_as_str(key: Key) -> &'static str {
     match key {
@@ -123,82 +129,95 @@ pub fn key_to_string(key: Key) -> String {
     return key_as_str(key).to_string();
 }
 
-pub fn build_keymap(keys: Vec<String>) -> Result<HashMap<String, (String, usize)>> {
-    let mut key_map = HashMap::<String, (String, usize)>::with_capacity(keys.len());
-
-    for (i, key) in keys.iter().enumerate() {
-        if !key.contains(":") {
-            key_map.insert(key.clone().to_lowercase(), (key.to_owned(), i));
-            continue;
-        }
-
-        let split: Vec<String> = key.split(":").map(|s| s.to_string()).collect();
-
-        let first = split
-            .first()
-            .with_context(|| "Failed to get split.first()")?;
-
-        let last = split.last().with_context(|| "Failed to get split.last()")?;
-
-        key_map.insert(first.to_owned().to_lowercase(), (last.to_owned(), i));
+pub fn build_keymap() -> anyhow::Result<()> {
+    let settings;
+    {
+        settings = SETTINGS.read().unwrap().clone()
     }
 
-    return Ok(key_map);
+    let unmasked_list: Vec<String> = settings.keyboard.keys;
+
+    let mut masked_keys: HashMap<String, (String, usize)> = HashMap::new();
+    for (i, key) in unmasked_list.iter().enumerate() {
+        if key.contains(":") {
+            let split: Vec<String> = key.split(":").map(|s| s.to_string()).collect();
+
+            let first = split
+                .first()
+                .with_context(|| "Failed to get first element of split")?;
+
+            let second = split
+                .last()
+                .with_context(|| "Failed to get last element of split")?;
+
+            masked_keys.insert((*first).to_lowercase(), ((*second).clone(), i));
+        } else {
+            masked_keys.insert(key.to_lowercase(), (key.clone(), i));
+        }
+    }
+
+    *KEY_MAP.write().unwrap() = masked_keys;
+    *RESET.write().unwrap() = settings.keyboard.reset;
+
+    Ok(())
 }
 
-pub fn hook_keyboard(settings: Settings) -> Result<()> {
-    let keys = build_keymap(settings.read_config::<Vec<String>>("keys")?)?;
+fn handle_key(k: Key, down: bool) {
+    // this stuff is a little performance intensive (not really but its still a waste) so we don't want to run it unless its a keyboard message
+    // rdev also does stuff like mouse
+    let mut pressed_keys = { PRESSED_KEYS.read().unwrap().clone() };
+    let reset = { RESET.read().unwrap().clone() };
+    let key_map = { KEY_MAP.read().unwrap().clone() };
 
-    let reset = settings.read_config::<String>("reset")?.to_lowercase();
+    let key = key_to_string(k).to_lowercase();
 
-    let mut held_keys: Vec<String> = Vec::new();
-
-    let callback = move |event: Event| {
-        match event.event_type {
-            EventType::KeyRelease(key) => {
-                let key_str = key_to_string(key).to_lowercase();
-
-                if key_str == reset {
-                    server::update_clients("reset".to_string());
-                    return;
-                }
-
-                if let Some(pair) = keys.get(&key_str) {
-                    let (mask, index) = pair;
-
-                    // key_str is the monitored key, mask is the value to send
-                    // send it to the clients
-                    server::update_clients(format!("[\"{}\", false, {}]", mask, index));
-
-                    if let Some(index) = held_keys.iter().position(|x| *x == key_str) {
-                        held_keys.remove(index);
-                    }
-                }
-            }
-
-            EventType::KeyPress(key) => {
-                let key_str = key_to_string(key).to_lowercase();
-
-                if held_keys.contains(&key_str) {
-                    return;
-                }
-
-                if let Some(pair) = keys.get(&key_str) {
-                    let (mask, index) = pair;
-
-                    // key_str is the monitored key, mask is the value to send
-                    // send it to the clients
-                    server::update_clients(format!("[\"{}\", true, {}]", mask, index));
-                    held_keys.push(key_str);
-                }
-            }
-
-            _ => {}
+    if down {
+        if pressed_keys.contains(&key) {
+            return;
         }
-    };
+    } else {
+        if key == reset.to_lowercase() {
+            server::update_clients("reset".to_string());
+            return;
+        }
+    }
 
-    if let Err(error) = rdev::listen(callback) {
-        anyhow::bail!("Error while listening to keyboard input: {:?}", error);
+    if let Some(pair) = key_map.get(&key) {
+        let (mask, index) = pair;
+
+        server::update_clients(format!("[\"{}\", {}, {}]", mask, down, index));
+
+        if down {
+            pressed_keys.push(key);
+        } else {
+            if let Some(index) = pressed_keys.iter().position(|x| *x == key) {
+                pressed_keys.remove(index);
+            }
+        }
+    }
+
+    *PRESSED_KEYS.write().unwrap() = pressed_keys;
+}
+
+fn callback(event: Event) {
+    match event.event_type {
+        EventType::KeyPress(k) => {
+            handle_key(k, true);
+        }
+
+        EventType::KeyRelease(k) => {
+            handle_key(k, false);
+        }
+
+        _ => (),
+    }
+}
+
+pub fn start() -> anyhow::Result<()> {
+    build_keymap()?;
+
+    if let Err(err) = rdev::listen(callback) {
+        anyhow::bail!("{:?}", err);
     }
 
     Ok(())
