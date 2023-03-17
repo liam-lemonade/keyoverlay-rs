@@ -101,10 +101,6 @@ pub struct OverlaySettings {
 }
 
 impl OverlaySettings {
-    pub fn is_changed(one: &Self, two: &Self) -> bool {
-        helper::hash_of(one) != helper::hash_of(two)
-    }
-
     pub fn is_fatal_change(one: &Self, two: &Self) -> bool {
         helper::hash_of(&one.server) != helper::hash_of(&two.server)
             || helper::hash_of(&one.web) != helper::hash_of(&two.web)

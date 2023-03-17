@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+//#![allow(dead_code)]
 
 extern crate toml;
 extern crate const_format;
@@ -12,7 +12,9 @@ use std::thread;
 
 use anyhow::Context;
 use const_format::formatcp;
+
 use settings::{OverlaySettings, Settings};
+use error::ErrorStatus;
 
 static SETTINGS_FILENAME: &str = "settings.toml";
 
@@ -80,7 +82,8 @@ fn main() {
         }
 
         Err(error) => {
-            error::display_error("main", error)
+            error::display_error("main", error);
+            error::shutdown(ErrorStatus::FAILURE);
         }
     }
 }
