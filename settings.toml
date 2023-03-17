@@ -1,0 +1,14 @@
+[server]
+ip = "127.0.0.1"
+port = 3120
+
+[web]
+websocket_endpoint = "/ws"
+local_file_path = "/static"
+
+[keyboard]
+keys = [
+    "Z",
+    "X",
+]
+reset = "End"
