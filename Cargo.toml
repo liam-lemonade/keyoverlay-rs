@@ -8,21 +8,18 @@ edition = "2021"
 [dependencies]
 eframe = "0.21.3"
 egui = "0.21.0"
-egui-keybinds = "1.2.4"
-
+egui-keybinds = "3.2.7"
 futures-util = "0.3.27"
 lazy_static = "1.4.0"
-
 poem = { version = "1.3.55", features = ["websocket", "static-files"] }
 tokio = { version = "1.26.0", features = ["rt-multi-thread", "macros"] }
-open = "4.0.0"
-
 toml = "0.7.3"
 msgbox = "0.7.0"
 serde = { version = "1.0.156", features = ["derive"] }
 anyhow = "1.0.69"
 futures = "0.3.27"
 const_format = "0.2.30"
+native-dialog = "0.6.3"
 
 
 [features]

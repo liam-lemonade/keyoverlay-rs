@@ -15,7 +15,7 @@ pub struct Settings {
 #[derive(Serialize, Deserialize, Clone, Hash)]
 pub struct ServerSettings {
     pub ip: String,
-    pub port: i16,
+    pub port: u16,
 }
 
 #[derive(Serialize, Deserialize, Clone, Hash)]
@@ -34,7 +34,7 @@ impl Default for ServerSettings {
     fn default() -> Self {
         Self {
             ip: "127.0.0.1".to_string(),
-            port: 3120_i16,
+            port: 3120_u16,
         }
     }
 }
@@ -101,13 +101,13 @@ pub struct OverlaySettings {
 }
 
 impl OverlaySettings {
-    pub fn is_changed(one: Self, two: Self) -> bool {
+    pub fn is_changed(one: &Self, two: &Self) -> bool {
         helper::hash_of(one) != helper::hash_of(two)
     }
 
-    pub fn is_fatal_change(one: Self, two: Self) -> bool {
-        helper::hash_of(one.server) != helper::hash_of(two.server)
-            || helper::hash_of(one.web) != helper::hash_of(two.web)
+    pub fn is_fatal_change(one: &Self, two: &Self) -> bool {
+        helper::hash_of(&one.server) != helper::hash_of(&two.server)
+            || helper::hash_of(&one.web) != helper::hash_of(&two.web)
     }
 
     pub fn to_toml(&self) -> anyhow::Result<String> {

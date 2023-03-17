@@ -44,14 +44,16 @@ pub async fn start(settings: OverlaySettings) -> anyhow::Result<()> {
     let path = settings.web.local_file_path;
     let address = format!("{}:{}", settings.server.ip, settings.server.port);
 
+    // create local file endpoint hosted on /
     let file_endpoint = StaticFilesEndpoint::new(path)
         .show_files_listing()
         .redirect_to_slash_directory()
         .index_file("index.html");
 
-    let app = Route::new()
-        .nest("/", file_endpoint)
-        .at("/ws", poem::get(websocket_connect));
+    let app = Route::new().nest("/", file_endpoint).at(
+        settings.web.websocket_endpoint,
+        poem::get(websocket_connect),
+    );
 
     if let Err(error) = Server::new(TcpListener::bind(address)).run(app).await {
         anyhow::bail!("{:?}", error);
