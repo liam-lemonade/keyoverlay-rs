@@ -16,8 +16,7 @@ pub fn display_message(text: &str, is_error: bool) {
         IconType::Info
     };
 
-    let title = format!("{} ({} v{})", crate::NAME, crate::BUILD, crate::VERSION);
-    msgbox::create(title.as_str(), text, icon).unwrap();
+    msgbox::create(crate::TITLE, text, icon).unwrap();
 }
 
 pub fn display_error<T: Debug>(thread_name: &str, error_data: T) {

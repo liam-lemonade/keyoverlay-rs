@@ -22,7 +22,7 @@ msgbox = "0.7.0"
 serde = { version = "1.0.156", features = ["derive"] }
 anyhow = "1.0.69"
 futures = "0.3.27"
+const_format = "0.2.30"
 
 
 [features]
-debug = []

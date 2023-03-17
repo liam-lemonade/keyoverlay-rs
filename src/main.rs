@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 extern crate toml;
+extern crate const_format;
 
 mod delegates;
 mod error;
@@ -10,18 +11,23 @@ mod settings;
 use std::thread;
 
 use anyhow::Context;
+use const_format::formatcp;
 use settings::{OverlaySettings, Settings};
 
 static SETTINGS_FILENAME: &str = "settings.toml";
 
-pub static NAME: &str = "keyoverlay-rs";
-pub static BUILD: &str = "oxide";
-pub static VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const NAME: &str = "keyoverlay-rs";
+pub const BUILD: &str = "oxide";
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+pub const TITLE: &str = formatcp!("{NAME} ({BUILD} v{VERSION})");
 
 macro_rules! start_delegate {
     ($delegate_name:ident, $settings:expr) => {
+        println!("starting {} thread", stringify!($delegate_name));
+
         if let Err(error) = delegates::$delegate_name::start($settings) {
-            error::display_error(stringify!(delegate_name), error);
+            error::display_error(stringify!($delegate_name), error);
         }
     };
 }
@@ -66,6 +72,8 @@ fn start_delegates(settings: OverlaySettings) {
 }
 
 fn main() {
+    println!("{} started", TITLE);
+
     match load_configuration() {
         Ok(settings) => {
             start_delegates(settings);
