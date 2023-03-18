@@ -56,7 +56,7 @@ fn load_configuration() -> anyhow::Result<OverlaySettings> {
             .with_context(|| "Failed to deserialize settings")?;
     }
 
-    Ok(OverlaySettings::from(toml_settings))
+    OverlaySettings::from_toml(toml_settings)
 }
 
 fn start_delegates(settings: OverlaySettings) {

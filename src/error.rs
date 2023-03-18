@@ -1,7 +1,7 @@
 extern crate anyhow;
-extern crate msgbox;
+extern crate native_dialog;
 
-use msgbox::IconType;
+use native_dialog::{MessageDialog, MessageType};
 use std::fmt::Debug;
 
 pub enum ErrorStatus {
@@ -10,13 +10,18 @@ pub enum ErrorStatus {
 }
 
 pub fn display_message(text: &str, is_error: bool) {
-    let icon = if is_error {
-        IconType::Error
+    let message_type = if is_error {
+        MessageType::Error
     } else {
-        IconType::Info
+        MessageType::Info
     };
 
-    msgbox::create(crate::TITLE, text, icon).unwrap();
+    MessageDialog::new()
+        .set_type(message_type)
+        .set_title(crate::TITLE)
+        .set_text(text)
+        .show_alert()
+        .expect("Failed to create message dialog");
 }
 
 pub fn display_error<T: Debug>(thread_name: &str, error_data: T) {

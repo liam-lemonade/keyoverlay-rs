@@ -2,6 +2,7 @@ extern crate egui_keybinds;
 extern crate serde;
 
 use crate::helper;
+use anyhow::Context;
 use egui_keybinds::KeyBind;
 use serde::{Deserialize, Serialize};
 
@@ -71,8 +72,15 @@ impl From<OverlaySettings> for Settings {
     fn from(mut overlay_settings: OverlaySettings) -> Self {
         let mut keys = vec![];
 
-        for mut key in overlay_settings.keys {
-            keys.push(key.serialize());
+        for mut pair in overlay_settings.keys {
+            let mut serialized = pair.0.serialize();
+
+            if let Some(mask) = pair.1 {
+                serialized.push(':');
+                serialized.push_str(&mask);
+            }
+
+            keys.push(serialized);
         }
 
         Self {
@@ -91,7 +99,7 @@ impl From<OverlaySettings> for Settings {
 
 #[derive(Clone, Hash)]
 pub struct OverlaySettings {
-    pub keys: Vec<KeyBind>,
+    pub keys: Vec<(KeyBind, Option<String>)>,
     pub reset: KeyBind,
 
     pub server: ServerSettings,
@@ -114,22 +122,32 @@ impl OverlaySettings {
             Err(error) => anyhow::bail!("{:?}", error),
         };
     }
-}
 
-impl From<Settings> for OverlaySettings {
-    fn from(toml_settings: Settings) -> Self {
-        let mut keys: Vec<KeyBind> = vec![];
+    pub fn from_toml(toml_settings: Settings) -> anyhow::Result<Self> {
+        let mut keys: Vec<(KeyBind, Option<String>)> = vec![];
 
         for str in &toml_settings.keyboard.keys {
-            match KeyBind::deserialize(str.clone()) {
-                Ok(key) => keys.push(key),
+            let data: (String, Option<String>) = if str.contains(":") {
+                let split: Vec<String> = str.split(":").map(|s| s.to_string()).collect();
 
-                Err(()) => {
-                    keys = vec![]; // remove keys if there is an error
+                let first = split
+                    .first()
+                    .with_context(|| "Failed to get first in split list")?
+                    .to_owned();
 
-                    break;
-                }
-            }
+                let last = split
+                    .last()
+                    .with_context(|| "Failed to get last in split list")?
+                    .to_owned();
+
+                (first, Some(last))
+            } else {
+                (str.to_owned(), None)
+            };
+
+            let key = KeyBind::deserialize(data.0).unwrap_or(KeyBind::empty());
+
+            keys.push((key, data.1));
         }
 
         let mut reset = KeyBind::empty();
@@ -138,7 +156,7 @@ impl From<Settings> for OverlaySettings {
             reset = key;
         }
 
-        Self {
+        Ok(Self {
             keys,
             reset,
 
@@ -146,6 +164,6 @@ impl From<Settings> for OverlaySettings {
             web: toml_settings.web.clone(),
 
             toml_settings,
-        }
+        })
     }
 }

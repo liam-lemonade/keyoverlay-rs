@@ -26,6 +26,8 @@ lazy_static! {
 }
 
 pub fn update_clients(data: String) {
+    println!("{}", data);
+
     CLIENT_LIST.lock().unwrap().retain_mut(|socket| {
         let result = futures::executor::block_on(socket.send(Message::Text(data.clone())));
         return result.is_ok();

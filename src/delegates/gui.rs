@@ -63,9 +63,6 @@ impl Gui {
             ui.set_enabled(self.dirty);
 
             if ui.button("Save").clicked() {
-                self.saved_settings = self.current_settings.clone();
-                self.saved_toml = self.current_toml.clone();
-
                 if let Ok(mut file) = std::fs::OpenOptions::new()
                     .write(true)
                     .truncate(true)
@@ -73,6 +70,14 @@ impl Gui {
                 {
                     let _ = file.write_all(self.current_toml.as_bytes());
                 }
+
+                self.saved_settings = self.current_settings.clone();
+                self.saved_toml = self.current_toml.clone();
+
+                let _ = super::keyboard::refresh_keys(
+                    self.saved_settings.keys.clone(),
+                    self.saved_settings.reset.clone(),
+                );
             }
         });
     }
@@ -140,11 +145,25 @@ impl Gui {
 
         ui.collapsing("Keyboard", |ui| {
             ui.collapsing("Keys", |ui| {
-                self.current_settings.keys.retain_mut(|mut key| {
+                self.current_settings.keys.retain_mut(|pair| {
                     let mut was_deleted = false;
 
                     ui.horizontal(|h| {
-                        KeyBindWidget::new(&mut key).ui(h);
+                        KeyBindWidget::new(&mut pair.0).ui(h);
+
+                        let mut mask_str = if let Some(mask) = &pair.1 {
+                            mask.clone()
+                        } else {
+                            "".to_string()
+                        };
+
+                        h.add_sized(
+                            vec2(50_f32, 20_f32),
+                            TextEdit::singleline(&mut mask_str).hint_text(pair.0.serialize()),
+                        );
+
+                        pair.1 = if mask_str == "" { None } else { Some(mask_str) };
+
                         was_deleted = h.button("-").clicked();
                     });
 
@@ -152,8 +171,13 @@ impl Gui {
                 });
 
                 if ui.button("+").clicked() {
-                    self.current_settings.keys.push(KeyBind::empty());
+                    self.current_settings.keys.push((KeyBind::empty(), None));
                 }
+            });
+
+            ui.horizontal(|h| {
+                h.label("Reset:");
+                KeyBindWidget::new(&mut self.current_settings.reset).ui(h);
             });
         });
     }
