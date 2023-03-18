@@ -22,12 +22,9 @@ use crate::settings::OverlaySettings;
 
 lazy_static! {
     pub static ref CLIENT_LIST: Arc<Mutex<Vec<WebSocketStream>>> = Arc::new(Mutex::new(Vec::new()));
-    //static ref CLIENT_LIST: RwLock<WebSocketStream> = RwLock::new();
 }
 
 pub fn update_clients(data: String) {
-    println!("{}", data);
-
     CLIENT_LIST.lock().unwrap().retain_mut(|socket| {
         let result = futures::executor::block_on(socket.send(Message::Text(data.clone())));
         return result.is_ok();
