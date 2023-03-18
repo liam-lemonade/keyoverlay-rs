@@ -39,12 +39,12 @@ fn load_configuration() -> anyhow::Result<OverlaySettings> {
 
     if helper::is_first_run(SETTINGS_FILENAME) {
         let message = 
-            format!("{}\n\n{}",
+            formatcp!("{}\n\n{}",
                 "This appears to be the first time you've run the program, and no configuration file currently exists.",
                 "Press \"OK\" to create a default configuration now."
             );
 
-        error::display_message(message.as_str(), false);
+        error::display_message(message, false);
 
         helper::create_default_file(SETTINGS_FILENAME, toml_settings.clone())?;
     } else {

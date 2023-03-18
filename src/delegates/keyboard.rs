@@ -39,55 +39,55 @@ fn on_key_interact(rdev_key: rdev::Key, is_down: bool) -> anyhow::Result<()> {
     let keys = KEYS.read().unwrap().clone();
     let reset = RESET.read().unwrap().clone();
 
-    let keycode = helper::rdev_to_egui(rdev_key).with_context(|| "Failed to parse rdev key")?;
+    if let Ok(keycode) = helper::rdev_to_egui(rdev_key) {
+        if reset.key.is_some() && reset.key.unwrap() == keycode.clone() {
+            if !is_down {
+                // sent "reset" to clients
+                server::update_clients("reset".to_string());
+            }
 
-    if reset.key.is_some() && reset.key.unwrap() == keycode.clone() {
-        if !is_down {
-            // sent "reset" to clients
-            server::update_clients("reset".to_string());
+            return Ok(());
         }
 
-        return Ok(());
-    }
+        for (i, pair) in keys.iter().enumerate() {
+            let (bind, mask) = pair.clone();
 
-    for (i, pair) in keys.iter().enumerate() {
-        let (bind, mask) = pair.clone();
-
-        if bind.key.is_none() {
-            continue;
-        }
-
-        let bind_key = bind.key.unwrap().clone();
-
-        if bind_key != keycode.clone() {
-            continue;
-        }
-
-        let held_keys_reader = HELD_KEYS.read().unwrap().clone();
-        let mut held_keys_writer = HELD_KEYS.write().unwrap();
-
-        if is_down {
-            if held_keys_reader.contains(&bind_key) {
+            if bind.key.is_none() {
                 continue;
             }
 
-            (*held_keys_writer).push(keycode.clone());
-        } else {
-            if !held_keys_reader.contains(&bind_key) {
+            let bind_key = bind.key.unwrap().clone();
+
+            if bind_key != keycode.clone() {
                 continue;
             }
 
-            (*held_keys_writer).retain(|k| *k != keycode);
+            let held_keys_reader = HELD_KEYS.read().unwrap().clone();
+            let mut held_keys_writer = HELD_KEYS.write().unwrap();
+
+            if is_down {
+                if held_keys_reader.contains(&bind_key) {
+                    continue;
+                }
+
+                (*held_keys_writer).push(keycode.clone());
+            } else {
+                if !held_keys_reader.contains(&bind_key) {
+                    continue;
+                }
+
+                (*held_keys_writer).retain(|k| *k != keycode);
+            }
+
+            let displayed_key = if let Some(str) = mask {
+                str
+            } else {
+                bind_key.serialize()
+            };
+
+            let data = format!("[\"{}\", {}, {}]", displayed_key, is_down, i);
+            server::update_clients(data);
         }
-
-        let displayed_key = if let Some(str) = mask {
-            str
-        } else {
-            bind_key.serialize()
-        };
-
-        let data = format!("[\"{}\", {}, {}]", displayed_key, is_down, i);
-        server::update_clients(data);
     }
 
     Ok(())
