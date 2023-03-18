@@ -2,7 +2,6 @@ extern crate egui_keybinds;
 extern crate lazy_static;
 extern crate rdev;
 
-use anyhow::Context;
 use egui_keybinds::{KeyBind, KeyCode};
 use lazy_static::lazy_static;
 use rdev::{Event, EventType};
