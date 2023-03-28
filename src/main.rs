@@ -1,147 +1,89 @@
-#![cfg_attr(
-    all(target_os = "windows", not(feature = "debug"),),
-    windows_subsystem = "windows"
-)]
+//#![allow(dead_code)]
 
-extern crate anyhow;
-extern crate lazy_static;
-extern crate serde;
 extern crate toml;
+extern crate const_format;
 
+mod delegates;
 mod error;
-mod gui;
-mod keyboard;
-mod server;
+mod helper;
+mod settings;
 
-use std::{
-    fs::{self, File},
-    io::Write,
-    path::Path,
-    sync::RwLock,
-    thread,
-};
+use std::thread;
 
-use anyhow::{Context, Result};
+use anyhow::Context;
+use const_format::formatcp;
 
-use error::ErrorCode;
-use lazy_static::lazy_static;
-use serde::{Deserialize, Serialize};
+use settings::{OverlaySettings, Settings};
+use error::ErrorStatus;
 
-pub const CONFIG_NAME: &str = "settings.toml";
+static SETTINGS_FILENAME: &str = "settings.toml";
 
-#[derive(Serialize, Deserialize, Clone)]
-struct Settings {
-    static_path: String,
+pub const NAME: &str = "keyoverlay-rs";
+pub const BUILD: &str = "oxide";
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-    keyboard: Keyboard,
+pub const TITLE: &str = formatcp!("{NAME} ({BUILD} v{VERSION})");
 
-    server: Server,
-}
+macro_rules! start_delegate {
+    ($delegate_name:ident, $settings:expr) => {
+        println!("starting {} thread", stringify!($delegate_name));
 
-#[derive(Serialize, Deserialize, Clone)]
-struct Keyboard {
-    keys: Vec<String>,
-    reset: String,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-struct Server {
-    ip: String,
-    port: u16,
-}
-
-macro_rules! read_settings {
-    () => {
-        SETTINGS.read().unwrap()
+        if let Err(error) = delegates::$delegate_name::start($settings) {
+            error::display_error(stringify!($delegate_name), error);
+        }
     };
 }
 
-macro_rules! write_settings {
-    () => {
-        SETTINGS.write().unwrap()
-    };
-}
+fn load_configuration() -> anyhow::Result<OverlaySettings> {
+    let mut toml_settings = Settings::default();
 
-lazy_static! {
-    static ref SETTINGS: RwLock<Settings> = RwLock::new(Settings {
-        static_path: "static".to_string(),
+    if helper::is_first_run(SETTINGS_FILENAME) {
+        let message = 
+            formatcp!("{}\n\n{}",
+                "This appears to be the first time you've run the program, and no configuration file currently exists.",
+                "Press \"OK\" to create a default configuration now."
+            );
 
-        keyboard: Keyboard {
-            keys: vec!["Z".to_string(), "X".to_string()],
-            reset: "End".to_string(),
-        },
+        error::display_message(message, false);
 
-        server: Server {
-            ip: "127.0.0.1".to_string(),
-            port: 7686
-        },
-    });
-}
+        helper::create_default_file(SETTINGS_FILENAME, toml_settings.clone())?;
+    } else {
+        // load configuration
+        let settings_string = std::fs::read_to_string(SETTINGS_FILENAME)
+            .with_context(|| "Failed to read from configuration file")?;
 
-fn main() -> Result<()> {
-    if let Err(error) = || -> Result<()> {
-        // populate SETTINGS variable
-        if Path::new(CONFIG_NAME).exists() {
-            // load file
-            let toml_settings =
-                fs::read_to_string(CONFIG_NAME).with_context(|| "Failed to read settings file")?;
-
-            *write_settings!() = toml::from_str(toml_settings.as_str())
-                .with_context(|| "Failed to deserialize settings")?;
-        } else {
-            // create file and write
-            let mut file = File::create(CONFIG_NAME)
-                .with_context(|| format!("Failed to create file: \"{CONFIG_NAME}\""))?;
-
-            let settings = read_settings!();
-            let toml_settings = toml::to_string_pretty(&*settings)
-                .with_context(|| "Failed to serialize settings")?;
-
-            file.write(toml_settings.as_bytes())
-                .with_context(|| "Failed to write settings to file")?;
-        }
-
-        let web_path = if cfg!(feature = "debug") {
-            "D:\\code\\rust\\keyoverlay-rs\\static".to_string()
-        } else {
-            read_settings!().static_path.clone()
-        };
-
-        // start threads
-        thread::spawn(|| {
-            if let Err(err) = keyboard::start() {
-                error::msgbox("An error occurred while running the keyboard thread", err);
-                error::shutdown(ErrorCode::Failure);
-            }
-        });
-
-        thread::spawn(|| {
-            let ip;
-            let port;
-            {
-                let settings = read_settings!();
-
-                ip = settings.server.ip.clone();
-                port = settings.server.port;
-            }
-
-            let address = format!("{}:{}", ip, port);
-            if let Err(err) = server::start(web_path, address) {
-                error::msgbox("An error occurred while running the server thread", err);
-                error::shutdown(ErrorCode::Failure);
-            }
-        });
-
-        if let Err(err) = gui::start() {
-            error::msgbox("An error occurred while running the gui thread", err);
-            error::shutdown(ErrorCode::Failure);
-        }
-
-        Ok(())
-    }() {
-        error::msgbox("An error occurred while running the main thread", error);
-        error::shutdown(ErrorCode::Failure);
+        toml_settings = toml::from_str::<Settings>(&settings_string)
+            .with_context(|| "Failed to deserialize settings")?;
     }
 
-    error::shutdown(error::ErrorCode::Success)
+    OverlaySettings::from_toml(toml_settings)
+}
+
+fn start_delegates(settings: OverlaySettings) {
+    let server_settings = settings.clone();
+    thread::spawn(move || {
+        start_delegate!(server, server_settings);
+    });
+
+    let keyboard_settings = settings.clone();
+    thread::spawn(move || {
+        start_delegate!(keyboard, keyboard_settings);
+    });
+
+    start_delegate!(gui, settings);
+}
+
+fn main() {
+    println!("{} started", TITLE);
+
+    match load_configuration() {
+        Ok(settings) => {
+            start_delegates(settings);
+        }
+
+        Err(error) => {
+            error::display_error("main", error);
+            error::shutdown(ErrorStatus::FAILURE);
+        }
+    }
 }

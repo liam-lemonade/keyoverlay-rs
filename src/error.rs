@@ -1,19 +1,38 @@
+extern crate anyhow;
+extern crate native_dialog;
+
+use native_dialog::{MessageDialog, MessageType};
 use std::fmt::Debug;
 
-pub enum ErrorCode {
-    Success = 0,
-    Failure = 1,
+pub enum ErrorStatus {
+    FAILURE = 1,
+    SUCCESS = 0,
 }
 
-pub fn msgbox<T: Debug>(text: &str, error: T) {
-    msgbox::create(
-        "keyoverlay-rs",
-        format!("{}\n\n{:?}", text, error).as_str(),
-        msgbox::IconType::Error,
-    )
-    .expect("Failed to create messagebox");
+pub fn display_message(text: &str, is_error: bool) {
+    let message_type = if is_error {
+        MessageType::Error
+    } else {
+        MessageType::Info
+    };
+
+    MessageDialog::new()
+        .set_type(message_type)
+        .set_title(crate::TITLE)
+        .set_text(text)
+        .show_alert()
+        .expect("Failed to create message dialog");
 }
 
-pub fn shutdown(code: ErrorCode) -> ! {
-    std::process::exit(code as i32);
+pub fn display_error<T: Debug>(thread_name: &str, error_data: T) {
+    let message = format!(
+        "An error occured while running the {} thread\n\n{:?}",
+        thread_name, error_data
+    );
+
+    self::display_message(message.as_str(), true);
+}
+
+pub fn shutdown(status: ErrorStatus) -> ! {
+    std::process::exit(status as i32);
 }
