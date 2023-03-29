@@ -19,7 +19,7 @@ use error::ErrorStatus;
 static SETTINGS_FILENAME: &str = "settings.toml";
 
 pub const NAME: &str = "keyoverlay-rs";
-pub const BUILD: &str = "oxide";
+pub const BUILD: &str = "stable";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub const TITLE: &str = formatcp!("{NAME} ({BUILD} v{VERSION})");
