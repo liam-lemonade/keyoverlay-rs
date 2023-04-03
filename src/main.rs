@@ -1,4 +1,5 @@
 //#![allow(dead_code)]
+#![windows_subsystem = "windows"]
 
 extern crate toml;
 extern crate const_format;
